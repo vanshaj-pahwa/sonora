@@ -1,13 +1,16 @@
-name: Release APK
+name: Release
 
 on:
   workflow_dispatch:
   push:
     tags: [ 'v*' ]
 
+permissions:
+  contents: write
+
 jobs:
   release:
-    name: Build release APK
+    name: Build and publish release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,11 +22,12 @@ jobs:
           distribution: microsoft
           cache: gradle
 
-      # Unsigned by default so the workflow is green on a fresh clone. Signing switches itself on
-      # once the four secrets below exist, rather than failing the build when they do not.
       - name: Assemble release
         run: ./gradlew :app:assembleRelease
 
+      # Signing switches itself on once these secrets exist, rather than failing the run when they
+      # do not. Unsigned APKs still install via adb, but Android will refuse them from a file
+      # manager, so set the secrets before announcing a build to anyone.
       - name: Check for signing secrets
         id: secrets
         run: |
@@ -31,13 +35,12 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No SIGNING_KEY secret set, uploading unsigned APKs."
+            echo "::warning::No SIGNING_KEY secret set. Publishing UNSIGNED APKs."
           fi
 
       - name: Sign release
         if: steps.secrets.outputs.present == 'true'
         uses: kevin-david/zipalign-sign-android-release@v2
-        id: sign_app
         with:
           releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
@@ -46,8 +49,11 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           zipAlign: true
 
-      - name: Upload APKs
-        uses: actions/upload-artifact@v4
+      # This is what puts the entry in the repository sidebar. Artifacts live on the run page,
+      # need a GitHub login to download and expire; a release is public, permanent and linkable.
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          name: sonora-release
-          path: app/build/outputs/apk/release/*.apk
+          draft: false
+          generate_release_notes: true
+          files: app/build/outputs/apk/release/*.apk
