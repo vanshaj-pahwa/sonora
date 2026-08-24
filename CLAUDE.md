@@ -4,7 +4,39 @@ Android YouTube Music client. A fork of [SimpMusic](https://github.com/maxrave-d
 (GPL-3.0) by Tuan Minh Nguyen Duc (maxrave-dev), rebranded and reworked by Vanshaj Pahwa.
 
 **Respond in English only.** No em dashes, no en dashes, no emoji in code, comments or copy.
-Never add a `Co-Authored-By` trailer to commits. Git email: `vanshajpahwa07@gmail.com`.
+Git email: `vanshajpahwa07@gmail.com`.
+
+---
+
+## Commits
+
+**Never add a `Co-Authored-By` trailer, or any other trailer.** Not on any commit, ever.
+
+Conventional Commits for the subject line: `type: summary`, lower case after the colon, no full
+stop, imperative mood, 72 characters or fewer. Types in use here:
+
+| Type | For |
+|---|---|
+| `feat` | a capability the user can see |
+| `fix` | a defect, with the symptom named |
+| `refactor` | shape changes with no behaviour change |
+| `perf` | measured speed or memory work, quote the numbers |
+| `build` | Gradle, dependencies, packaging |
+| `ci` | workflows |
+| `docs` | README, this file, anything under docs/ |
+| `test` | tests only |
+| `chore` | the rest, sparingly |
+
+Add a scope when it narrows things usefully: `fix(auto):`, `perf(player):`.
+
+**Body: two to three short paragraphs.** State the symptom or the reason, then what changed, then
+anything surprising a reader would otherwise have to rediscover. A one line commit throws away the
+only context that survives; a fifteen line essay stops being read. Skip the body only when the
+subject genuinely says everything, which is rare outside `chore` and `docs`.
+
+Reference upstream issues as `maxrave-dev/SimpMusic#626` so the link resolves from this repo.
+
+One commit, one idea. A refactor and the bug fix it uncovered are two commits, not one.
 
 ---
 
