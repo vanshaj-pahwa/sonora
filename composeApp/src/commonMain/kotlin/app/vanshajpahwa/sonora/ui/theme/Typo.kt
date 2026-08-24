@@ -222,7 +222,7 @@ fun typo(
                     fontFamily = fontFamily,
                     color = bodyColor,
                 ),
-            // ...
+            //...
         )
     return typo
 }

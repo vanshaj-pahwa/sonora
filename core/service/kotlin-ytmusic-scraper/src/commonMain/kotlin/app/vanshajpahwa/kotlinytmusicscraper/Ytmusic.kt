@@ -441,7 +441,7 @@ class Ytmusic {
 //                    if (poToken != null) {
 //                        PlayerBody.ServiceIntegrityDimensions(
 //                            poToken = poToken,
-//                        )
+//)
 //                    } else {
 //                        null
 //                    },
@@ -1200,7 +1200,7 @@ class Ytmusic {
     /**
      * Fetch the remote app config (TIDAL credentials) from GitHub raw.
      *
-     * raw.githubusercontent.com serves .json files as `text/plain`, so Ktor's
+     * raw.githubusercontent.com serves.json files as `text/plain`, so Ktor's
      * ContentNegotiation will not auto-deserialize the body. We read it as text and parse
      * it explicitly with [normalJson] (which ignores unknown keys for forward-compat).
      */

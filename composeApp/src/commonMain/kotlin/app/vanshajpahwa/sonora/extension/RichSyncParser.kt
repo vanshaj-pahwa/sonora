@@ -22,7 +22,7 @@ data class ParsedRichSyncLine(
 /**
  * Parses rich sync lyrics format into word-level timing data
  *
- * Expected format: <MM:SS.mm> word <MM:SS.mm> word ...
+ * Expected format: <MM:SS.mm> word <MM:SS.mm> word...
  * Example: <00:16.62> Và <00:16.64> em <00:16.68> nói
  *
  * @param words The rich sync string containing timestamps and words

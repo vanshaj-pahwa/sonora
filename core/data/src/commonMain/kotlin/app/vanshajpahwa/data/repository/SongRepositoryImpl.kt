@@ -148,7 +148,7 @@ internal class SongRepositoryImpl(
         // a local favourite and not liked upstream, or the reverse, with nothing on screen saying
         // which was which. One heart now does both, and "Combine local and YouTube liked" in
         // settings decides whether the second half happens. That switch was already on screen; the
-        // code it was meant to drive was commented out, so it silently did nothing (upstream #626).
+        // code it was meant to drive was commented out, so it silently did nothing.
         //
         // Failures are swallowed inside addToYouTubeLiked and removeFromYouTubeLiked on purpose:
         // the local like is the source of truth and must not be undone because the network was out.

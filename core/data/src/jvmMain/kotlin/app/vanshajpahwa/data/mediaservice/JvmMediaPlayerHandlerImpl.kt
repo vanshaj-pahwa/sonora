@@ -250,7 +250,7 @@ class JvmMediaPlayerHandlerImpl(
 
     // Discord Rich Presence is pushed event-driven (song change, resume, seek, speed) instead of on
     // the 100ms progress tick: the gateway only tolerates a few presence updates per minute, so the
-    // old 10Hz spam kept disconnecting the socket and froze presence on the previous song (#2236).
+    // old 10Hz spam kept disconnecting the socket and froze presence on the previous song.
     // Ordering uses a monotonic sequence (rpcEventSeq), NOT wall-clock time, since the wall clock can
     // step backward (NTP/manual) and would otherwise freeze presence. Snapshots are written with a
     // compare-and-keep-newest update (never overwriting a newer `seq` with an older one, regardless of
@@ -448,7 +448,7 @@ class JvmMediaPlayerHandlerImpl(
             val discordRPCEnabledJob =
                 launch {
                     // Run Rich Presence only when enabled AND logged in (non-blank token); a blank-token
-                    // DiscordRPC loops reconnect forever (issue #2157). Combining both flows also tears
+                    // DiscordRPC loops reconnect forever. Combining both flows also tears
                     // the RPC down as soon as the token is cleared on logout.
                     combine(
                         dataStoreManager.richPresenceEnabled,
@@ -840,13 +840,13 @@ class JvmMediaPlayerHandlerImpl(
     override fun startProgressUpdate() {
         // Cancel any previous loop first: both onIsPlayingChanged(true) and PlayerEvent.PlayPause
         // land here, and VLC re-emits isPlaying=true on rebuffer/next-track, so a leaked loop
-        // would otherwise multiply the UI updates and the periodic position writes (#2152).
+        // would otherwise multiply the UI updates and the periodic position writes.
         progressJob?.cancel()
         progressJob =
             coroutineScope.launch {
                 // Persist the playback position to DataStore on this interval so a hard quit
                 // or crash while playing still restores the correct position instead of
-                // restarting the track from the beginning (#2152, parity with Android). The
+                // restarting the track from the beginning (, parity with Android). The
                 // position is otherwise only saved on pause / track change / release, which
                 // misses uninterrupted playback.
                 val positionPersistIntervalMs = 5_000L
@@ -2175,7 +2175,7 @@ class JvmMediaPlayerHandlerImpl(
     }
 
     /**
-     * Lightweight periodic persistence of just the playback position (#2152).
+     * Lightweight periodic persistence of just the playback position.
      * Unlike [mayBeSaveRecentSong] this does NOT rewrite the whole saved queue, so it is
      * cheap enough to call every few seconds while a track plays uninterrupted. The saved
      * media id + position are what [mayBeRestoreQueue] reads to resume on next launch.
@@ -2221,10 +2221,10 @@ class JvmMediaPlayerHandlerImpl(
 //                coroutineScope.launch(Dispatchers.Main) {
 //                    fun Float?.toMb() = ((this ?: 0f) * 100).toInt()
 //                    streamRepository
-//                        .getFormatFlow(videoId)
-//                        .cancellable()
-//                        .distinctUntilChanged()
-//                        .collectLatest { format ->
+//.getFormatFlow(videoId)
+//.cancellable()
+//.distinctUntilChanged()
+//.collectLatest { format ->
 //                            if (format != null) {
 //                                val loudnessMb =
 //                                    format.loudnessDb.toMb().let {
@@ -2241,7 +2241,7 @@ class JvmMediaPlayerHandlerImpl(
 //                                    Logger.w(
 //                                        TAG,
 //                                        "mayBeNormalizeVolume: ${loudnessEnhancer?.targetGain}",
-//                                    )
+//)
 //                                } catch (e: Exception) {
 //                                    Logger.e(TAG, "mayBeNormalizeVolume: ${e.message}")
 //                                    e.printStackTrace()
@@ -2252,7 +2252,7 @@ class JvmMediaPlayerHandlerImpl(
 //                                    Logger.w(
 //                                        TAG,
 //                                        "mayBeNormalizeVolume: ${secondLoudnessEnhancer?.targetGain}",
-//                                    )
+//)
 //                                } catch (e: Exception) {
 //                                    Logger.e(TAG, "mayBeNormalizeVolume: ${e.message}")
 //                                    e.printStackTrace()
@@ -2564,7 +2564,7 @@ class JvmMediaPlayerHandlerImpl(
                     seq = seq,
                 )
             // Compare-and-keep-newest: the playbackSpeed.first() suspend above means two calls to
-            // updateDiscordRpc() can interleave and resolve out of order, so a plain `.value = ...`
+            // updateDiscordRpc() can interleave and resolve out of order, so a plain `.value =...`
             // write could let an older call clobber a newer one. Keep whichever has the higher seq.
             rpcSnapshotFlow.update { cur -> if (cur == null || seq >= cur.seq) snapshot else cur }
         }

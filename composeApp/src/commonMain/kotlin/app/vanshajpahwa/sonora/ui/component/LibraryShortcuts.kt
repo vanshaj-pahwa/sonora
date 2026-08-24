@@ -249,7 +249,7 @@ private fun LibraryPrimaryCard(
         Column(modifier = Modifier.weight(1f)) {
             // The count sits beside the label as a badge, not in front of the track names.
             //
-            // Run together as one string it read as "1 . 52 Bars", where the separator floats and
+            // Run together as one string it read as "1. 52 Bars", where the separator floats and
             // the leading digit looks like it belongs to the title that follows it. They answer two
             // different questions, how many and what is inside, so they are two different objects.
             Row(verticalAlignment = Alignment.CenterVertically) {

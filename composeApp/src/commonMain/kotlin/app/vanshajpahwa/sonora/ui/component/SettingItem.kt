@@ -33,7 +33,7 @@ fun SettingItem(
 ) {
     // Key on isEnable (not Unit) so the auto-disable fires whenever the gate flips to false mid-session
     // (e.g. the user logs out while Settings is open), not only on first composition. Without this, any
-    // child flag gated behind a login stays stuck ON until Settings is reopened (issues #2157, #2064).
+    // child flag gated behind a login stays stuck ON until Settings is reopened.
     //
     // Deliberately above the search filter below: a setting hidden by a search query must still turn
     // its child flags off when its gate closes. Returning first would have made that fix quietly

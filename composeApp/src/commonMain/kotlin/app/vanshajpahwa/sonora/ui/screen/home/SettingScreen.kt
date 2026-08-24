@@ -467,7 +467,7 @@ fun SettingScreen(
 
     // Import playlists converted on the web. Unlike restore, the file is read through Calf's
     // KmpFile rather than a Uri, so no expect/actual is needed. The type stays All because a
-    // converted .json arrives with whatever MIME its source assigned it, and an application/json
+    // converted.json arrives with whatever MIME its source assigned it, and an application/json
     // filter would hide it on some hosts.
     val importViewModel: ImportViewModel = koinViewModel()
     val importState by importViewModel.importState.collectAsStateWithLifecycle()
@@ -3125,7 +3125,7 @@ private fun ImportProgressDialog(
 }
 
 /**
- * Section heading in Settings ("Interface", "Content", "Audio", ...).
+ * Section heading in Settings ("Interface", "Content", "Audio",...).
  *
  * Uppercase and medium weight, where these used to be bold mixed-case. A section heading labels the
  * group beneath it; set bold at 16sp it carried more weight than the setting titles it was

@@ -202,15 +202,15 @@ internal class HomeRepositoryImpl(
 //                        var count = 0
 //                        while (count < limit && continueParam != null) {
 //                            youTube
-//                                .customQuery(browseId = "", continuation = continueParam)
-//                                .onSuccess { response ->
+//.customQuery(browseId = "", continuation = continueParam)
+//.onSuccess { response ->
 //                                    continueParam =
 //                                        response.continuationContents
 //                                            ?.sectionListContinuation
 //                                            ?.continuations
 //                                            ?.get(
 //                                                0,
-//                                            )?.nextContinuationData
+//)?.nextContinuationData
 //                                            ?.continuation
 //                                    Logger.d("Repository", "continueParam: $continueParam")
 //                                    val dataContinue =
@@ -220,8 +220,8 @@ internal class HomeRepositoryImpl(
 //                                            dataContinue,
 //                                            viewString,
 //                                            songString,
-//                                        ),
-//                                    )
+//),
+//)
 //                                    count++
 //                                    Logger.d("Repository", "count: $count")
 //                                }.onFailure {

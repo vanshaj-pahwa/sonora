@@ -266,7 +266,7 @@ class ExoPlayerAdapter(
 //        override fun onTimelineChanged(
 //            timeline: Timeline,
 //            reason: Int,
-//        ) {
+//) {
 //            super.onTimelineChanged(timeline, reason)
 //            val list = mutableListOf<GenericMediaItem>()
 //            val s = exoPlayer.shuffleModeEnabled
@@ -283,7 +283,7 @@ class ExoPlayerAdapter(
 //                        Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE -> "TIMELINE_CHANGE_REASON_SOURCE_UPDATE"
 //                        else -> "Unknown"
 //                    },
-//                )
+//)
 //            }
 //        }
 

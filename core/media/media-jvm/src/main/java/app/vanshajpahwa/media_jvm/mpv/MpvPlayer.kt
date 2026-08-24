@@ -171,7 +171,7 @@ class MpvPlayer private constructor(
             // MUST stay "no". With terminal=yes, mpv wires up terminal output — and this build of
             // libmpv ships the `sixel` feature (terminal image output), which pulled libsixel into
             // play and aborted the whole JVM with
-            //   ../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
+            //../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
             // Also covers what VLC's "--quiet" / "--no-video-title-show" did.
             option("terminal", "no")
             // We resolve stream URLs ourselves via StreamRepository, so mpv must never invoke its
@@ -201,7 +201,7 @@ class MpvPlayer private constructor(
             // ao_uninit() only calls driver->uninit() when `driver_initialized` is set — a flag
             // ao.c sets only AFTER a successful init. So unregister_hotplug_cb() never runs,
             // while talloc_free(ao) does. The orphaned listener outlives the handle for the rest
-            // of the process, and the next device change calls hotplug_cb -> MP_VERBOSE(ao, ...)
+            // of the process, and the next device change calls hotplug_cb -> MP_VERBOSE(ao,...)
             // -> mp_msg(ao->log) on freed memory: EXC_BAD_ACCESS on the HALC_ProxyNotification
             // queue. Still present in mpv master as of 0.41.0.
             //
@@ -240,13 +240,13 @@ class MpvPlayer private constructor(
             // mpv picks the VO during mpv_initialize(). Leaving it unset lets mpv auto-probe, and
             // in a headless JVM process it can land on a terminal-graphics driver — which is
             // exactly what happened: it selected `sixel`, and libsixel aborted the whole JVM with
-            //   ../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
+            //../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
             // (SIGABRT, exit 134) during ordinary music playback. Creating the render context
             // afterwards does NOT retroactively change a VO that mpv_initialize already chose.
             //
             // `libmpv` is the VO that backs the render API — v0.37.0 DOCS/man/vo.rst:561:
             //   ``libmpv``
-            //       For use with libmpv direct embedding. ...
+            //       For use with libmpv direct embedding....
             //       (See ``<mpv/render.h>``.)
             // Note `--vo=<driver>` takes a SINGLE driver, not a priority list (unlike `--vd`), so
             // a "libmpv,null" fallback chain is not available here.
@@ -291,7 +291,7 @@ class MpvPlayer private constructor(
             // The render context must exist before the first loadfile — render.h: "The renderer
             // needs to be created with mpv_render_context_create() before you start playback (or
             // otherwise cause a VO to be created)", and "Video initialization will fail if the
-            // render context was not initialized yet ... or it will revert to a VO that creates
+            // render context was not initialized yet... or it will revert to a VO that creates
             // its own window."
             //
             // Creating it here (post-initialize, pre-loadfile) is correct: mpv_initialize() only

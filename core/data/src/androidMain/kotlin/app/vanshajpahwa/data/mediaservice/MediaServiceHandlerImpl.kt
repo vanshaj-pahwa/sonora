@@ -229,7 +229,7 @@ internal class MediaServiceHandlerImpl(
 
     // Discord Rich Presence is pushed event-driven (song change, resume, seek, speed) instead of on
     // the 100ms progress tick: the gateway only tolerates a few presence updates per minute, so the
-    // old 10Hz spam kept disconnecting the socket and froze presence on the previous song (#2236).
+    // old 10Hz spam kept disconnecting the socket and froze presence on the previous song.
     // Ordering uses a monotonic sequence (rpcEventSeq), NOT wall-clock time, since the wall clock can
     // step backward (NTP/manual) and would otherwise freeze presence. Snapshots are written with a
     // compare-and-keep-newest update (never overwriting a newer `seq` with an older one, regardless of
@@ -409,7 +409,7 @@ internal class MediaServiceHandlerImpl(
                 launch {
                     // Run Rich Presence only when it's enabled AND the user is logged in (non-blank
                     // token). Building DiscordRPC("") makes the gateway loop connect→identify-fail→
-                    // reconnect forever and drains the battery (issue #2157). Combining both flows also
+                    // reconnect forever and drains the battery. Combining both flows also
                     // tears the RPC down the moment the token is cleared on logout.
                     combine(
                         dataStoreManager.richPresenceEnabled,
@@ -803,14 +803,14 @@ internal class MediaServiceHandlerImpl(
     override fun startProgressUpdate() {
         // Cancel any previous loop first: onIsPlayingChanged(true) can fire repeatedly
         // (crossfade swap, rebuffer→ready, resume-on-focus-gain) and a leaked loop would
-        // otherwise multiply both the UI updates and the periodic position writes (#2152).
+        // otherwise multiply both the UI updates and the periodic position writes.
         progressJob?.cancel()
         progressJob =
             coroutineScope.launch {
                 // Persist the playback position to DataStore on this interval so a sudden
                 // service/process kill while playing in the background (aggressive OEMs)
                 // still restores the correct position instead of restarting the track from
-                // the beginning (#2152). The position is otherwise only saved on pause /
+                // the beginning. The position is otherwise only saved on pause /
                 // track change / release, which misses uninterrupted background playback.
                 val positionPersistIntervalMs = 5_000L
                 var sinceLastPositionSaveMs = 0L
@@ -2121,7 +2121,7 @@ internal class MediaServiceHandlerImpl(
     }
 
     /**
-     * Lightweight periodic persistence of just the playback position (#2152).
+     * Lightweight periodic persistence of just the playback position.
      * Unlike [mayBeSaveRecentSong] this does NOT rewrite the whole saved queue, so it is
      * cheap enough to call every few seconds while a track plays uninterrupted. The saved
      * media id + position are what [mayBeRestoreQueue] reads to resume after a process kill.
@@ -2519,7 +2519,7 @@ internal class MediaServiceHandlerImpl(
                     seq = seq,
                 )
             // Compare-and-keep-newest: the playbackSpeed.first() suspend above means two calls to
-            // updateDiscordRpc() can interleave and resolve out of order, so a plain `.value = ...`
+            // updateDiscordRpc() can interleave and resolve out of order, so a plain `.value =...`
             // write could let an older call clobber a newer one. Keep whichever has the higher seq.
             rpcSnapshotFlow.update { cur -> if (cur == null || seq >= cur.seq) snapshot else cur }
         }

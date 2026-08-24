@@ -142,7 +142,7 @@ interface MpvLibrary : Library {
      *
      * render.h: *"The renderer needs to be created with mpv_render_context_create() before you
      * start playback (or otherwise cause a VO to be created)"*, and *"Video initialization will
-     * fail if the render context was not initialized yet ... or it will revert to a VO that
+     * fail if the render context was not initialized yet... or it will revert to a VO that
      * creates its own window."*
      */
     fun mpv_render_context_create(
@@ -360,7 +360,7 @@ interface MpvLibrary : Library {
                 // The bug this caused was invisible on any dev machine: with libmpv installed
                 // system-wide, dlopen() finds it through ld.so and everything works. On a clean
                 // machine the bundled directory was never searched, and a shipped AppImage failed
-                // with "libmpv native library not found ... Bundled natives were not located
+                // with "libmpv native library not found... Bundled natives were not located
                 // either" despite carrying libmpv.so.2 inside it.
                 //
                 // addSearchPath() takes effect immediately and is per-library-name, so it is
@@ -404,7 +404,7 @@ interface MpvLibrary : Library {
                     // libsixel and more. With RTLD_GLOBAL every one of those symbols is published
                     // into the process-wide namespace, where Skiko/AWT/other natives can resolve
                     // against them by accident. That is what produced
-                    //   ../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
+                    //../src/allocator.c:139: sixel_allocator_malloc: Assertion `allocator' failed.
                     // — an abort inside libsixel although nothing in this codebase ever calls it.
                     //
                     // Evidence it is an interaction, not our call path: loading libmpv in a bare
@@ -661,9 +661,9 @@ internal fun buildRenderParams(params: List<Pair<Int, Pointer?>>): Memory {
  *  - `DOCS/edl-mpv.rst` "Separate files for tracks": *"Upon playback, the tracks will be played
  *    at the same time, instead of appending them"*, and *"`!new_stream` must be the first
  *    header"*.
- *  - `player/lua/ytdl_hook.lua`: `hdr[#hdr + 1] = edl_escape(url) .. params`,
+ *  - `player/lua/ytdl_hook.lua`: `hdr[#hdr + 1] = edl_escape(url).. params`,
  *    `streams[#streams + 1] = table.concat(hdr, ";")`, and finally
- *    `res.url = "edl://" .. table.concat(streams, ";")`.
+ *    `res.url = "edl://".. table.concat(streams, ";")`.
  *
  * Resulting shape:
  * ```
@@ -690,7 +690,7 @@ internal fun buildEdlUrl(
  *
  * Mandatory for googlevideo URLs — `DOCS/edl-mpv.rst` reserves `,` `;` `\n` `!` inside parameter
  * values, and stream URLs contain `;` and `,` in their query strings. Port of ytdl_hook.lua's
- * `edl_escape`: `return "%" .. string.len(url) .. "%" .. url`.
+ * `edl_escape`: `return "%".. string.len(url).. "%".. url`.
  *
  * Note `string.len` in Lua counts BYTES, so the length is measured over the UTF-8 encoding
  * rather than over Kotlin's UTF-16 char count.

@@ -27,7 +27,7 @@ private const val TAG = "MemoryTrimmer"
  * | OS      | call                                                  | since        |
  * |---------|-------------------------------------------------------|--------------|
  * | Linux   | `malloc_trim(0)`                                       | glibc        |
- * | Windows | `HeapSetInformation(NULL, HeapOptimizeResources, ...)` | Windows 8.1  |
+ * | Windows | `HeapSetInformation(NULL, HeapOptimizeResources,...)` | Windows 8.1  |
  *
  * ## Why macOS is deliberately excluded
  * macOS has an equivalent — `malloc_zone_pressure_relief(NULL, 0)` — and it was wired up here until

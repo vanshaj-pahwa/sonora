@@ -171,7 +171,7 @@ internal class CrossfadeExoPlayerAdapter(
     // Swapped between players during crossfade.
     private var activePlayerListener: Player.Listener? = null
 
-    // ========== Audio Focus (manual, session-scoped) — #2155 ==========
+    // ========== Audio Focus (manual, session-scoped) —  ==========
     // The multi-player swap model means audio focus must NOT be tied to any single
     // ExoPlayer: releasing the outgoing player would abandon focus, and the incoming
     // player (built with handleAudioFocus=false) never re-requests it — the root cause
@@ -464,7 +464,7 @@ internal class CrossfadeExoPlayerAdapter(
      * an independent low-pass filter while the fade-in player has a high-pass filter.
      *
      * Audio focus is NOT handled per-player: it is managed once at the adapter level
-     * (see the Audio Focus section) so it survives every player swap (#2155).
+     * (see the Audio Focus section) so it survives every player swap.
      */
     private fun createExoPlayerInstance(): PlayerWithFilter {
         val crossfadeFilter = CrossfadeFilterAudioProcessor()
@@ -1401,7 +1401,7 @@ internal class CrossfadeExoPlayerAdapter(
                     }
 
                     // Audio focus is held at the adapter level (see Audio Focus section),
-                    // not per-player, so it survives this swap (#2155).
+                    // not per-player, so it survives this swap.
 
                     // Apply settings
                     player.volume = internalVolume
@@ -1706,7 +1706,7 @@ internal class CrossfadeExoPlayerAdapter(
      * MediaSession. [localCurrentMediaItemIndex] already equals A+1, so it is kept.
      *
      * Does NOT change [internalState], restart position updates, or seek — the caller
-     * decides what to do next (pause in place, advance to A+2, go to previous, ...).
+     * decides what to do next (pause in place, advance to A+2, go to previous,...).
      */
     private fun commitIncomingAsCurrentInternal() {
         crossfadeJob?.cancel()
@@ -2347,7 +2347,7 @@ internal class CrossfadeExoPlayerAdapter(
 
         val isMinor = keyScale?.uppercase()?.contains("MIN") == true
 
-        // Camelot number lookup by chromatic semitone (C=0, C#=1, D=2, ... B=11)
+        // Camelot number lookup by chromatic semitone (C=0, C#=1, D=2,... B=11)
         //                                   C  C# D  D# E  F  F# G  G# A  A# B
         val minorCamelotByPitch = intArrayOf(5, 12, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10)
         val majorCamelotByPitch = intArrayOf(8, 3, 10, 5, 12, 7, 2, 9, 4, 11, 6, 1)
@@ -2459,7 +2459,7 @@ internal class CrossfadeExoPlayerAdapter(
 
     /**
      * Map a musical key name to its chromatic semitone number (0-11).
-     * C=0, C#/Db=1, D=2, ..., B=11. Returns -1 for unknown keys.
+     * C=0, C#/Db=1, D=2,..., B=11. Returns -1 for unknown keys.
      */
     private fun keyToSemitone(key: String): Int =
         when (key.trim()) {
@@ -2551,7 +2551,7 @@ internal class CrossfadeExoPlayerAdapter(
         // localCurrentMediaItemIndex already updated in triggerCrossfadeTransition()
 
         // Audio focus is held at the adapter level (see Audio Focus section),
-        // not per-player, so it survives this crossfade swap (#2155).
+        // not per-player, so it survives this crossfade swap.
 
         // Ensure correct volume and playback parameters
         currentPlayer?.volume = internalVolume

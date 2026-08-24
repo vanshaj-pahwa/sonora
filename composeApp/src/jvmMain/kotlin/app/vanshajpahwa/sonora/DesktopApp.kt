@@ -147,7 +147,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     // Single-instance guard — MUST run before startKoin. The DataStore Koin
     // singleton is `createdAtStart`, so a second Windows instance would touch
     // ~/.sonora/settings.preferences_pb and crash with an "Unable to rename
-    // ...tmp" IOException (#2044) before it ever reached the old in-Compose check.
+    //...tmp" IOException before it ever reached the old in-Compose check.
     // Bail out here, before Koin/DataStore initialize.
     val isSingleInstance =
         SingleInstanceManager.isSingleInstance(

@@ -329,12 +329,12 @@ sealed class SponsorBlockType(
 //            R.string.music_off_topic,
 //            R.string.poi_highlight,
 //            R.string.filler,
-//        )
+//)
 //
 //    fun fromDbToName(
 //        context: Context,
 //        list: List<CharSequence>,
-//    ): List<String> {
+//): List<String> {
 //        val result = mutableListOf<String>()
 //        for (item in list) {
 //            val index = list.indexOf(item)
@@ -346,7 +346,7 @@ sealed class SponsorBlockType(
 //    fun fromNameToDb(
 //        context: Context,
 //        input: List<String>,
-//    ): List<CharSequence> {
+//): List<CharSequence> {
 //        val allString = fromDbToName(context, list.toList())
 //        val listIndex =
 //            allString.map {

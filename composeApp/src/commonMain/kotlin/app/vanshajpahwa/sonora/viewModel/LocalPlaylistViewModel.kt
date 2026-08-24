@@ -581,25 +581,25 @@ class LocalPlaylistViewModel(
 //                            mainRepository.updateLocalPlaylistYouTubePlaylistSyncState(
 //                                yt.id,
 //                                LocalPlaylistEntity.YouTubeSyncState.Synced,
-//                            )
+//)
 //                            mainRepository.getLocalPlaylist(playlist.id).collect { last ->
 //                                _localPlaylist.emit(last)
 //                                Toast
-//                                    .makeText(
+//.makeText(
 //                                        application,
 //                                        application.getString(Res.string.synced),
 //                                        Toast.LENGTH_SHORT,
-//                                    ).show()
+//).show()
 //                            }
 //                        }
 //                    }
 //                } else {
 //                    Toast
-//                        .makeText(
+//.makeText(
 //                            application,
 //                            application.getString(Res.string.error),
 //                            Toast.LENGTH_SHORT,
-//                        ).show()
+//).show()
 //                }
 //            }
         }

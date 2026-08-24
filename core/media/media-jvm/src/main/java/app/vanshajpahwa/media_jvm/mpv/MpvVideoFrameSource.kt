@@ -34,7 +34,7 @@ private const val TAG = "MpvVideoFrameSource"
  * ## Lifecycle (render.h "Context and handle lifecycle")
  * [attach] must run after `mpv_initialize` but BEFORE the first `loadfile`: *"The renderer needs to
  * be created with mpv_render_context_create() before you start playback"*, and *"Video
- * initialization will fail if the render context was not initialized yet ... or it will revert to a
+ * initialization will fail if the render context was not initialized yet... or it will revert to a
  * VO that creates its own window."* [detach] must run before `mpv_terminate_destroy`: *"You must
  * free the context with mpv_render_context_free() before the mpv core is destroyed."*
  *
@@ -65,7 +65,7 @@ class MpvVideoFrameSource {
      */
     private val swFormat = "bgr0"
 
-    /** Bytes per pixel for [swFormat] — render.h: "4 bytes per pixel RGB ... Pixel alignment size: 4 bytes". */
+    /** Bytes per pixel for [swFormat] — render.h: "4 bytes per pixel RGB... Pixel alignment size: 4 bytes". */
     private val bytesPerPixel = 4
 
     /**
@@ -379,7 +379,7 @@ class MpvVideoFrameSource {
         val renderParams =
             buildRenderParams(
                 listOf(
-                    // SW_SIZE takes a pointer to int[2] ("Type: int[2] ... param.data = &s[0]").
+                    // SW_SIZE takes a pointer to int[2] ("Type: int[2]... param.data = &s[0]").
                     MpvRenderParamType.SW_SIZE to sizeMem,
                     // SW_FORMAT takes the string pointer directly ("Type: char*").
                     MpvRenderParamType.SW_FORMAT to formatMem,

@@ -55,7 +55,7 @@ fun Palette?.toImmersiveBackground(): Color {
             ?: p.getVibrantColor(0).takeIf { it != 0 }
             ?: return Color.Black
     val base = Color(rgb)
-    // Perceived luminance (0 dark .. 1 light) of the source swatch.
+    // Perceived luminance (0 dark.. 1 light) of the source swatch.
     val luminance = 0.299f * base.red + 0.587f * base.green + 0.114f * base.blue
     // Darken more for lighter artwork so the page stays dark enough for white text.
     val darkenFactor = 0.35f + 0.45f * luminance

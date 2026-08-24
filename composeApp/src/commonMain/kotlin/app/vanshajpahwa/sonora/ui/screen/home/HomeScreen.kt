@@ -446,7 +446,7 @@ fun HomeScreen(
 //            onDismissRequest = {
 //                shouldShowGetDataSyncIdBottomSheet = false
 //            },
-//        )
+//)
 //    }
 
     Box {

@@ -386,7 +386,7 @@ fun Lyrics.toSyncedLrcString(): String? {
  * Reverse of [parseRichSyncLyrics]: converts RICH_SYNCED Lyrics back to the rich sync LRC string format.
  *
  * Output format (one per line):
- * [MM:SS.mm] <MM:SS.mm>word <MM:SS.mm>word ...
+ * [MM:SS.mm] <MM:SS.mm>word <MM:SS.mm>word...
  */
 fun Lyrics.toRichSyncLrcString(): String? {
     val lines = this.lines

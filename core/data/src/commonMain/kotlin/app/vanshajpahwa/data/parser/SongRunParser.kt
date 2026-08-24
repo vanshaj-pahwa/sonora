@@ -22,7 +22,7 @@ import app.vanshajpahwa.kotlinytmusicscraper.models.Run
  * play count leaks into the artist name.
  *
  * The fix is to stop guessing. Every linked run carries a `pageType`
- * (`MUSIC_PAGE_TYPE_ARTIST`, `MUSIC_PAGE_TYPE_ALBUM`, ...) that states what it is, so the column
+ * (`MUSIC_PAGE_TYPE_ARTIST`, `MUSIC_PAGE_TYPE_ALBUM`,...) that states what it is, so the column
  * can be identified from structure. Once the artist column is identified correctly it contains only
  * artists, and no view-count filtering is needed at all.
  *

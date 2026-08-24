@@ -523,7 +523,7 @@ class MpvPlayerAdapter(
         coroutineScope.launch {
             // Bounds check MUST run inside the launch, on the same player thread/queue as removeAt.
             // If it sits outside (on the caller thread), another queued op (clearMediaItems/setMediaItem)
-            // can empty the playlist between the check and removeAt → IndexOutOfBounds (issue #2156 /
+            // can empty the playlist between the check and removeAt → IndexOutOfBounds (issue  /
             // SONORA-DESKTOP-3Y: "Index 0 out of bounds for length 0").
             if (index !in playlist.indices) return@launch
             val track = playlist.removeAt(index)
@@ -569,7 +569,7 @@ class MpvPlayerAdapter(
         toIndex: Int,
     ) {
         coroutineScope.launch {
-            // Same reason as removeMediaItem (issue #2156): re-check bounds inside the launch, since the
+            // Same reason as removeMediaItem: re-check bounds inside the launch, since the
             // playlist can be emptied by another queued op between an outside-launch guard and removeAt.
             if (fromIndex !in playlist.indices || toIndex !in playlist.indices) return@launch
             val item = playlist.removeAt(fromIndex)
@@ -1606,7 +1606,7 @@ class MpvPlayerAdapter(
      * stopping it here would freeze progress and disable every later crossfade.
      *
      * Does NOT change [internalState] and does NOT seek — the caller decides what happens next
-     * (pause in place, advance to A+2, go to previous, ...).
+     * (pause in place, advance to A+2, go to previous,...).
      */
     private suspend fun commitIncomingAsCurrent() {
         val incoming = secondaryPlayer

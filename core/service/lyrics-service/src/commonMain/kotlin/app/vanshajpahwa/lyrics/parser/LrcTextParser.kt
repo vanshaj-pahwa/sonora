@@ -131,9 +131,9 @@ fun parseTtmlLyrics(data: String): Lyrics {
     val linesLyrics = ArrayList<Lyrics.LyricsX.Line>()
     var hasWordTiming = false
 
-    // Match each <p ...>...</p> element (use [\s\S] instead of . with DOT_MATCHES_ALL)
+    // Match each <p...>...</p> element (use [\s\S] instead of. with DOT_MATCHES_ALL)
     val pRegex = Regex("""<p\s[^>]*begin="([^"]+)"[^>]*end="([^"]+)"[^>]*>([\s\S]*?)</p>""")
-    // Match each <span ...>word</span> element
+    // Match each <span...>word</span> element
     val spanRegex = Regex("""<span\s[^>]*begin="([^"]+)"[^>]*end="([^"]+)"[^>]*>(.*?)</span>""")
 
     for (pMatch in pRegex.findAll(data)) {
