@@ -74,17 +74,24 @@ class PlaylistViewModel(
      * The author's picture, when the device already has one. Read from Room, never fetched, exactly
      * as the album page does for its artist.
      */
-    private val _authorId = MutableStateFlow<String?>(null)
+    private val _author = MutableStateFlow<Pair<String?, String?>>(null to null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val authorThumbnail: StateFlow<String?> =
-        _authorId
-            .flatMapLatest { id ->
-                if (id.isNullOrBlank()) flowOf(null) else artistRepository.getArtistById(id).map { it?.thumbnails }
+        _author
+            .flatMapLatest { (id, name) ->
+                if (id.isNullOrBlank() && name.isNullOrBlank()) {
+                    flowOf(null)
+                } else {
+                    artistRepository.getArtistByIdOrName(id, name).map { it?.thumbnails }
+                }
             }.stateIn(viewModelScope, WhileSubscribed(5_000), null)
 
-    fun setAuthorId(id: String?) {
-        _authorId.value = id
+    fun setAuthor(
+        id: String?,
+        name: String?,
+    ) {
+        _author.value = id to name
     }
 
     val downloadUtils: DownloadHandler by inject<DownloadHandler>()

@@ -61,10 +61,14 @@ class AlbumViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val artistThumbnail: StateFlow<String?> =
         uiState
-            .map { it.artist.id }
+            .map { it.artist.id to it.artist.name }
             .distinctUntilChanged()
-            .flatMapLatest { id ->
-                if (id.isNullOrBlank()) flowOf(null) else artistRepository.getArtistById(id).map { it?.thumbnails }
+            .flatMapLatest { (id, name) ->
+                if (id.isNullOrBlank() && name.isBlank()) {
+                    flowOf(null)
+                } else {
+                    artistRepository.getArtistByIdOrName(id, name).map { it?.thumbnails }
+                }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
 

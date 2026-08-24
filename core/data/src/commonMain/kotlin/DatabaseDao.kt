@@ -474,6 +474,16 @@ interface DatabaseDao {
     @Query("SELECT * FROM artist WHERE channelId = :channelId")
     suspend fun getArtist(channelId: String): ArtistEntity?
 
+    /**
+     * An artist by display name, for when the channel id does not match.
+     *
+     * YouTube hands out more than one channel for the same artist: the id on a playlist's author
+     * differs from the one stored when their artist page was browsed, so a lookup by id alone
+     * misses an artist the device already has a picture for.
+     */
+    @Query("SELECT * FROM artist WHERE name = :name LIMIT 1")
+    suspend fun getArtistByName(name: String): ArtistEntity?
+
     @Query("SELECT * FROM artist WHERE followed = 1 ORDER BY followedAt DESC LIMIT :limit OFFSET :offset")
     suspend fun getFollowedArtists(
         limit: Int,

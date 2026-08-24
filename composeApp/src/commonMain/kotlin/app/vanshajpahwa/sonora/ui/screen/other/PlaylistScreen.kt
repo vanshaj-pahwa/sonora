@@ -215,7 +215,7 @@ fun PlaylistScreen(
     // flow never has an id and the chip silently renders the name only. Uses the uiState already
     // collected above rather than subscribing to the same flow a second time.
     LaunchedEffect(uiState) {
-        (uiState as? PlaylistUIState.Success)?.data?.author?.id?.let { viewModel.setAuthorId(it) }
+        (uiState as? PlaylistUIState.Success)?.data?.author?.let { viewModel.setAuthor(it.id, it.name) }
     }
 
     val selection = rememberSelectionState()
@@ -534,29 +534,15 @@ fun PlaylistScreen(
                                                         CompositionLocalProvider(
                                                             LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
                                                         ) {
-                                                            TextButton(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .wrapContentHeight()
-                                                                        .defaultMinSize(minHeight = 1.dp, minWidth = 1.dp),
-                                                                contentPadding = PaddingValues(vertical = 1.dp),
+                                                            ArtistChip(
+                                                                name = data.author.name,
+                                                                thumbnail = authorThumbnail,
                                                                 onClick = {
                                                                     if (data.author.id.isNotEmpty()) {
-                                                                        navController.navigate(
-                                                                            ArtistDestination(
-                                                                                data.author.id,
-                                                                            ),
-                                                                        )
+                                                                        navController.navigate(ArtistDestination(data.author.id))
                                                                     }
                                                                 },
-                                                            ) {
-                                                                Text(
-                                                                    text = data.author.name,
-                                                                    style = typo().titleSmall,
-                                                                    color = Color.White,
-                                                                    textAlign = TextAlign.Center,
-                                                                )
-                                                            }
+                                                            )
                                                         }
                                                         Spacer(modifier = Modifier.height(2.dp))
                                                         Text(
