@@ -1299,15 +1299,31 @@ fun MoodAndGenresContentItem(
                         )
                         homeViewModel.loadMediaItem(track, type = Config.SONG_CLICK)
                     } else {
+                        // Route by the id's prefix, not by the field it arrived in.
+                        //
+                        // playlistBrowseId is simply whatever browseEndpoint.browseId YouTube
+                        // returned, so a genre page's album shelf puts album ids in it. Sending
+                        // those to the playlist screen meant a spinner, a failed load and a bounce
+                        // straight back to the genre, which is what tapping any album under a
+                        // genre used to do.
+                        //
+                        // VL marks a playlist here, the same prefix verifyYouTubePlaylistId adds
+                        // and the repositories test for. Anything that is not a playlist, artist
+                        // or podcast is an album, which is the default the home shelves already
+                        // take.
+                        val browseId =
+                            if (item is app.vanshajpahwa.domain.data.model.mood.genre.Content) {
+                                item.playlistBrowseId
+                            } else {
+                                (item as app.vanshajpahwa.domain.data.model.mood.moodmoments.Content).playlistBrowseId
+                            }
                         navController.navigate(
-                            PlaylistDestination(
-                                playlistId =
-                                    if (item is app.vanshajpahwa.domain.data.model.mood.genre.Content) {
-                                        item.playlistBrowseId
-                                    } else {
-                                        (item as app.vanshajpahwa.domain.data.model.mood.moodmoments.Content).playlistBrowseId
-                                    },
-                            ),
+                            when {
+                                browseId.startsWith("VL") -> PlaylistDestination(playlistId = browseId)
+                                browseId.startsWith("UC") -> ArtistDestination(channelId = browseId)
+                                browseId.startsWith("MPSP") -> PodcastDestination(podcastId = browseId)
+                                else -> AlbumDestination(browseId = browseId)
+                            },
                         )
                     }
                 }, data = item)
