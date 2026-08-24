@@ -45,8 +45,29 @@ android {
         }
     }
 
+    // Sign during the build rather than bolting a signature on afterwards.
+    //
+    // Without this, Gradle names its output "-unsigned" and an external signing step appends
+    // "-signed", producing app-arm64-v8a-release-unsigned-signed.apk. Nobody downloading a release
+    // can tell that apart from the genuinely unsigned file sitting beside it. Signing here means
+    // one artifact, correctly named, and no way to publish an uninstallable APK by accident.
+    //
+    // Absent credentials the config is simply not applied, so a plain clone still builds.
+    val releaseKeystore = System.getenv("KEYSTORE_FILE")?.let(::file)?.takeIf { it.exists() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

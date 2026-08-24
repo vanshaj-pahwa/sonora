@@ -22,47 +22,50 @@ jobs:
           distribution: microsoft
           cache: gradle
 
+      # Gradle signs during the build, so there is one artifact per ABI and it is named correctly.
+      # A separate signing step would leave the original "-unsigned" file next to a "-signed" copy,
+      # and nobody downloading a release can tell which of those will install.
+      - name: Decode signing keystore
+        id: signing
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+        run: |
+          if [ -z "$SIGNING_KEY" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No SIGNING_KEY secret set. The APKs will be unsigned and will not install."
+            exit 0
+          fi
+          echo "$SIGNING_KEY" | base64 -d > "$RUNNER_TEMP/sonora.jks"
+          echo "present=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/sonora.jks"
+            echo "KEYSTORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}"
+            echo "KEY_ALIAS=${{ secrets.ALIAS }}"
+            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}"
+          } >> "$GITHUB_ENV"
+
       - name: Assemble release
         run: ./gradlew :app:assembleRelease
 
-      # Signing switches itself on once these secrets exist, rather than failing the run when they
-      # do not. Unsigned APKs still install via adb, but Android will refuse them from a file
-      # manager, so set the secrets before announcing a build to anyone.
-      - name: Check for signing secrets
-        id: secrets
+      # Ship names a person can read: sonora-1.0.0-arm64-v8a.apk rather than
+      # app-arm64-v8a-release.apk. Most phones want arm64-v8a; universal is the fallback.
+      - name: Name the APKs
         run: |
-          if [ -n "${{ secrets.SIGNING_KEY }}" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No SIGNING_KEY secret set. Publishing UNSIGNED APKs."
-          fi
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          for f in app/build/outputs/apk/release/*.apk; do
+            case "$f" in *-unsigned.apk) echo "Refusing to publish unsigned: $f"; continue;; esac
+            abi=$(basename "$f" | sed -E 's/^app-(.*)-release\.apk$/\1/')
+            cp "$f" "dist/sonora-${VERSION}-${abi}.apk"
+          done
+          ls -la dist/
 
-      # The signing action shells out to zipalign and apksigner, which live inside a versioned
-      # build-tools directory. Without being told which one, it guesses a version that may not be
-      # installed on the runner and fails looking for a binary that is not there.
-      - name: Resolve build-tools version
-        if: steps.secrets.outputs.present == 'true'
-        run: echo "BUILD_TOOLS_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)" >> "$GITHUB_ENV"
+      - name: Fail if nothing publishable
+        run: test -n "$(ls -A dist 2>/dev/null)" || { echo "No signed APKs produced"; exit 1; }
 
-      - name: Sign release
-        if: steps.secrets.outputs.present == 'true'
-        uses: kevin-david/zipalign-sign-android-release@v2
-        env:
-          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOLS_VERSION }}
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          zipAlign: true
-
-      # This is what puts the entry in the repository sidebar. Artifacts live on the run page,
-      # need a GitHub login to download and expire; a release is public, permanent and linkable.
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           draft: false
           generate_release_notes: true
-          files: app/build/outputs/apk/release/*.apk
+          files: dist/*.apk
