@@ -121,9 +121,10 @@ fun HomeResumeCard(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                // The remaining time is appended to the artist rather than given its own line, so
-                // the card keeps its height and the words on it finally match what tapping does.
-                text = if (remainingLabel != null) "$subtitle  .  $remainingLabel" else subtitle,
+                // Artist only. The remaining time used to be appended after a separator, which put a
+                // stray dot and a countdown on a card whose whole job is to be tapped without
+                // reading. How far in you are is not a decision you make from the home screen.
+                text = subtitle,
                 style = typo().bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

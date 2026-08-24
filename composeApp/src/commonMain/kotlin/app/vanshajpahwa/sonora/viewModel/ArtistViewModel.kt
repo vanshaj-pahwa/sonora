@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import app.vanshajpahwa.sonora.resources.Res
+import app.vanshajpahwa.sonora.resources.popular
 import app.vanshajpahwa.sonora.resources.radio
 import app.vanshajpahwa.sonora.resources.shuffle
 
@@ -182,6 +183,32 @@ class ArtistViewModel(
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Play the artist's popular songs, in order, from the top.
+     *
+     * The page's primary action used to be Shuffle, which put a differently behaving control in the
+     * same slot that album and playlist use for Play. Shuffle is a way of playing, not a way of
+     * starting, and asking someone to reason about that before hearing anything is the wrong trade
+     * on the one button the page exists for.
+     */
+    fun onPlayPopularClick() {
+        val songs = artistScreenState.value.data.popularSongs
+        val first = songs.firstOrNull() ?: return
+        viewModelScope.launch {
+            setQueueData(
+                QueueData.Data(
+                    listTracks = ArrayList(songs),
+                    firstPlayedTrack = first,
+                    playlistId = null,
+                    playlistName = "\"${artistScreenState.value.data.title}\" ${getString(Res.string.popular)}",
+                    playlistType = PlaylistType.RADIO,
+                    continuation = null,
+                ),
+            )
+            loadMediaItem(first, Config.PLAYLIST_CLICK, 0)
         }
     }
 

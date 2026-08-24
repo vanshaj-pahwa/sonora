@@ -51,6 +51,9 @@ interface SongRepository {
     suspend fun insertSongs(songs: List<SongEntity>)
 
     /** Songs on the device matching [query] by title or artist. No network. */
+    /** Everything in the library, newest first, live. */
+    fun getAllSongsAsFlow(limit: Int): Flow<List<SongEntity>>
+
     fun searchLocalSongs(
         query: String,
         limit: Int = 20,

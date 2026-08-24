@@ -208,6 +208,7 @@ import app.vanshajpahwa.sonora.resources.good_evening
 import app.vanshajpahwa.sonora.resources.good_afternoon
 import app.vanshajpahwa.sonora.resources.good_morning
 import app.vanshajpahwa.sonora.resources.recently
+import app.vanshajpahwa.sonora.resources.recently_added
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
 import app.vanshajpahwa.sonora.resources.discover
@@ -642,12 +643,18 @@ fun HomeScreen(
                                     // Two wide cards where three squares were. Favourites moved to
                                     // the header, and these two now preview their top track, which a
                                     // third-of-a-row square could never fit legibly.
+                                    // An empty tile is an empty promise. Downloaded reading zero
+                                    // took half the row to say there was nothing there, so a tile
+                                    // now appears only when it has something, the survivor takes the
+                                    // full width, and with neither the row does not draw at all.
+                                    if (downloaded.isNotEmpty() || recent.isNotEmpty()) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     ) {
                                         val topDownload = downloaded.firstOrNull()
                                         val topRecent = recent.firstOrNull()
+                                        if (downloaded.isNotEmpty()) {
                                         HomePreviewTile(
                                             label = stringResource(Res.string.downloaded),
                                             count = downloaded.size,
@@ -666,8 +673,10 @@ fun HomeScreen(
                                                 )
                                             },
                                         )
+                                        }
+                                        if (recent.isNotEmpty()) {
                                         HomePreviewTile(
-                                            label = stringResource(Res.string.recently),
+                                            label = stringResource(Res.string.recently_added),
                                             count = recent.size,
                                             icon = SonoraIcons.History,
                                             tint = MaterialTheme.colorScheme.secondary,
@@ -678,6 +687,8 @@ fun HomeScreen(
                                             modifier = Modifier.weight(1f),
                                             onClick = { navController.navigate(RecentlySongsDestination) },
                                         )
+                                        }
+                                    }
                                     }
                                 }
                             }

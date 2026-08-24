@@ -104,7 +104,10 @@ import app.vanshajpahwa.sonora.extension.getStringBlocking
 import app.vanshajpahwa.sonora.extension.toImmersiveBackground
 import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.ui.component.CenterLoadingBox
+import app.vanshajpahwa.sonora.ui.component.ArtistChip
 import app.vanshajpahwa.sonora.ui.component.DescriptionView
+import app.vanshajpahwa.sonora.ui.component.DetailActionRow
+import app.vanshajpahwa.sonora.ui.component.DetailCircleButton
 import app.vanshajpahwa.sonora.ui.component.EndOfPage
 import app.vanshajpahwa.sonora.ui.component.HeartCheckBox
 import app.vanshajpahwa.domain.manager.DataStoreManager
@@ -207,6 +210,13 @@ fun PlaylistScreen(
         .getEnableLiquidGlass()
         .collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val glassOn = isLiquidGlassEnabled == DataStoreManager.TRUE
+    val authorThumbnail by viewModel.authorThumbnail.collectAsStateWithLifecycle()
+    // Feeds the author id to the view model so it can look the picture up locally. Without this the
+    // flow never has an id and the chip silently renders the name only. Uses the uiState already
+    // collected above rather than subscribing to the same flow a second time.
+    LaunchedEffect(uiState) {
+        (uiState as? PlaylistUIState.Success)?.data?.author?.id?.let { viewModel.setAuthorId(it) }
+    }
 
     val selection = rememberSelectionState()
 
@@ -697,28 +707,15 @@ fun PlaylistScreen(
                                                         CompositionLocalProvider(
                                                             LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
                                                         ) {
-                                                            TextButton(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .wrapContentHeight()
-                                                                        .defaultMinSize(minHeight = 1.dp, minWidth = 1.dp),
-                                                                contentPadding = PaddingValues(vertical = 1.dp),
+                                                            ArtistChip(
+                                                                name = data.author.name,
+                                                                thumbnail = authorThumbnail,
                                                                 onClick = {
                                                                     if (data.author.id.isNotEmpty()) {
-                                                                        navController.navigate(
-                                                                            ArtistDestination(
-                                                                                data.author.id,
-                                                                            ),
-                                                                        )
+                                                                        navController.navigate(ArtistDestination(data.author.id))
                                                                     }
                                                                 },
-                                                            ) {
-                                                                Text(
-                                                                    text = data.author.name,
-                                                                    style = typo().labelSmall,
-                                                                    color = Color.White,
-                                                                )
-                                                            }
+                                                            )
                                                         }
                                                         Spacer(modifier = Modifier.size(4.dp))
                                                         Text(
@@ -737,154 +734,114 @@ fun PlaylistScreen(
                                                     // Apple Music-style action row:
                                                     // [Shuffle][Play pill][Download/More] (cluster centered, all 48dp matching size)
                                                     val isThisPlaying = isPlaying && playingPlaylistId == data.id
-                                                    Row(
-                                                        modifier =
-                                                            Modifier
-                                                                .fillMaxWidth()
-                                                                .padding(vertical = 8.dp),
-                                                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                    ) {
-                                                        if (!data.isRadio) {
-                                                            Box(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .size(48.dp)
-                                                                        .clip(CircleShape)
-                                                                        .background(Color.White.copy(alpha = 0.12f))
-                                                                        .clickable {
-                                                                            viewModel.onUIEvent(PlaylistUIEvent.Shuffle)
-                                                                        },
-                                                                contentAlignment = Alignment.Center,
-                                                            ) {
-                                                                Icon(
-                                                                    imageVector = SonoraIcons.Shuffle,
-                                                                    contentDescription = "Shuffle",
-                                                                    tint = Color.White,
-                                                                    modifier = Modifier.size(22.dp),
-                                                                )
+                                                    DetailActionRow(
+                                                        isPlaying = isThisPlaying,
+                                                        playLabel = if (isThisPlaying) "Pause" else "Play",
+                                                        onPlayPause = {
+                                                            if (isThisPlaying) {
+                                                                sharedViewModel.onUIEvent(UIEvent.PlayPause)
+                                                            } else {
+                                                                viewModel.onUIEvent(PlaylistUIEvent.PlayAll)
                                                             }
-                                                        }
-                                                        Box(
-                                                            modifier =
-                                                                Modifier
-                                                                    .height(48.dp)
-                                                                    .widthIn(min = 110.dp)
-                                                                    .clip(CircleShape)
-                                                                    // Sky Blue, matching the artist page's shuffle and the
-                                                                    // nav pill. A white primary action is the neutral
-                                                                    // default every player ships; the brand colour on the
-                                                                    // one control the page exists for is what makes the
-                                                                    // detail pages read as the same product.
-                                                                    .background(MaterialTheme.colorScheme.primary)
-                                                                    .clickable {
-                                                                        if (isThisPlaying) {
-                                                                            sharedViewModel.onUIEvent(UIEvent.PlayPause)
-                                                                        } else {
-                                                                            viewModel.onUIEvent(PlaylistUIEvent.PlayAll)
-                                                                        }
-                                                                    }.padding(horizontal = 16.dp),
-                                                            contentAlignment = Alignment.Center,
-                                                        ) {
-                                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                                Icon(
-                                                                    imageVector =
-                                                                        if (isThisPlaying) SonoraIcons.Pause else SonoraIcons.PlayArrow,
-                                                                    contentDescription = null,
-                                                                    tint = Color.Black,
-                                                                    modifier = Modifier.size(22.dp),
-                                                                )
-                                                                Spacer(modifier = Modifier.width(4.dp))
-                                                                Text(
-                                                                    text = if (isThisPlaying) "Pause" else "Play",
-                                                                    color = Color.Black,
-                                                                    style = typo().labelLarge,
-                                                                )
-                                                            }
-                                                        }
-                                                        if (!data.isRadio) {
-                                                            Box(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .size(48.dp)
-                                                                        .clip(CircleShape)
-                                                                        .background(Color.White.copy(alpha = 0.12f)),
-                                                                contentAlignment = Alignment.Center,
-                                                            ) {
-                                                                Crossfade(targetState = downloadState) { state ->
-                                                                    when (state) {
-                                                                        DownloadState.STATE_DOWNLOADED -> {
-                                                                            Box(
-                                                                                modifier =
-                                                                                    Modifier
-                                                                                        .fillMaxSize()
-                                                                                        .clickable {
-                                                                                            viewModel.makeToast(
-                                                                                                getStringBlocking(Res.string.downloaded),
-                                                                                            )
-                                                                                        },
-                                                                                contentAlignment = Alignment.Center,
-                                                                            ) {
-                                                                                Icon(
-                                                                                    painter = painterResource(Res.drawable.baseline_downloaded),
-                                                                                    tint = Color(0xFF00A0CB),
-                                                                                    contentDescription = "",
-                                                                                    modifier = Modifier.size(22.dp),
-                                                                                )
+                                                        },
+                                                        // A radio has no fixed order to shuffle.
+                                                        leading =
+                                                            if (data.isRadio) {
+                                                                null
+                                                            } else {
+                                                                {
+                                                                    DetailCircleButton(
+                                                                        icon = SonoraIcons.Shuffle,
+                                                                        contentDescription = "Shuffle",
+                                                                        onClick = { viewModel.onUIEvent(PlaylistUIEvent.Shuffle) },
+                                                                    )
+                                                                }
+                                                            },
+                                                        trailing = {
+                                                            if (!data.isRadio) {
+                                                                Box(
+                                                                    modifier =
+                                                                        Modifier
+                                                                            .size(48.dp)
+                                                                            .clip(CircleShape)
+                                                                            .background(Color.White.copy(alpha = 0.12f)),
+                                                                    contentAlignment = Alignment.Center,
+                                                                ) {
+                                                                    Crossfade(targetState = downloadState) { state ->
+                                                                        when (state) {
+                                                                            DownloadState.STATE_DOWNLOADED -> {
+                                                                                Box(
+                                                                                    modifier =
+                                                                                        Modifier
+                                                                                            .fillMaxSize()
+                                                                                            .clickable {
+                                                                                                viewModel.makeToast(
+                                                                                                    getStringBlocking(Res.string.downloaded),
+                                                                                                )
+                                                                                            },
+                                                                                    contentAlignment = Alignment.Center,
+                                                                                ) {
+                                                                                    Icon(
+                                                                                        painter = painterResource(Res.drawable.baseline_downloaded),
+                                                                                        tint = Color(0xFF00A0CB),
+                                                                                        contentDescription = "",
+                                                                                        modifier = Modifier.size(22.dp),
+                                                                                    )
+                                                                                }
                                                                             }
-                                                                        }
 
-                                                                        DownloadState.STATE_DOWNLOADING -> {
-                                                                            Box(
-                                                                                modifier =
-                                                                                    Modifier
-                                                                                        .fillMaxSize()
-                                                                                        .clickable {
-                                                                                            viewModel.makeToast(
-                                                                                                getStringBlocking(Res.string.downloading),
-                                                                                            )
-                                                                                        },
-                                                                                contentAlignment = Alignment.Center,
-                                                                            ) {
-                                                                                Image(
-                                                                                    painter =
-                                                                                        rememberLottiePainter(
-                                                                                            composition = composition,
-                                                                                            iterations = Compottie.IterateForever,
-                                                                                        ),
-                                                                                    contentDescription = "Lottie animation",
-                                                                                    modifier = Modifier.size(28.dp),
-                                                                                )
+                                                                            DownloadState.STATE_DOWNLOADING -> {
+                                                                                Box(
+                                                                                    modifier =
+                                                                                        Modifier
+                                                                                            .fillMaxSize()
+                                                                                            .clickable {
+                                                                                                viewModel.makeToast(
+                                                                                                    getStringBlocking(Res.string.downloading),
+                                                                                                )
+                                                                                            },
+                                                                                    contentAlignment = Alignment.Center,
+                                                                                ) {
+                                                                                    Image(
+                                                                                        painter =
+                                                                                            rememberLottiePainter(
+                                                                                                composition = composition,
+                                                                                                iterations = Compottie.IterateForever,
+                                                                                            ),
+                                                                                        contentDescription = "Lottie animation",
+                                                                                        modifier = Modifier.size(28.dp),
+                                                                                    )
+                                                                                }
                                                                             }
-                                                                        }
 
-                                                                        else -> {
-                                                                            Box(
-                                                                                modifier =
-                                                                                    Modifier
-                                                                                        .fillMaxSize()
-                                                                                        .clickable {
-                                                                                            Logger.w(
-                                                                                                "PlaylistScreen",
-                                                                                                "downloadState: $downloadState",
-                                                                                            )
-                                                                                            viewModel.onUIEvent(PlaylistUIEvent.Download)
-                                                                                        },
-                                                                                contentAlignment = Alignment.Center,
-                                                                            ) {
-                                                                                Icon(
-                                                                                    imageVector = SonoraIcons.DownloadForOffline,
-                                                                                    tint = Color.White,
-                                                                                    contentDescription = "Download",
-                                                                                    modifier = Modifier.size(22.dp),
-                                                                                )
+                                                                            else -> {
+                                                                                Box(
+                                                                                    modifier =
+                                                                                        Modifier
+                                                                                            .fillMaxSize()
+                                                                                            .clickable {
+                                                                                                Logger.w(
+                                                                                                    "PlaylistScreen",
+                                                                                                    "downloadState: $downloadState",
+                                                                                                )
+                                                                                                viewModel.onUIEvent(PlaylistUIEvent.Download)
+                                                                                            },
+                                                                                    contentAlignment = Alignment.Center,
+                                                                                ) {
+                                                                                    Icon(
+                                                                                        imageVector = SonoraIcons.DownloadForOffline,
+                                                                                        tint = Color.White,
+                                                                                        contentDescription = "Download",
+                                                                                        modifier = Modifier.size(22.dp),
+                                                                                    )
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
                                                                 }
                                                             }
-                                                        }
-                                                    }
+                                                        },
+                                                    )
                                                 } else {
                                                     Row(
                                                         modifier =
@@ -1013,26 +970,24 @@ fun PlaylistScreen(
                                                     }
                                                 }
                                                 val uriHandler = LocalUriHandler.current
-                                                DescriptionView(
+                                                // Same as the album page: an empty description gets
+                                                // no row, rather than a row saying it is empty.
+                                                val playlistDescription = state.data.description?.takeIf { it.isNotBlank() }
+                                                if (playlistDescription != null) {
+                                                    DescriptionView(
                                                     modifier =
                                                         Modifier
                                                             .padding(
                                                                 top = 8.dp,
                                                             ),
-                                                    text =
-                                                        state.data.description.let {
-                                                            if (!it.isNullOrEmpty()) {
-                                                                it
-                                                            } else {
-                                                                stringResource(Res.string.no_description)
-                                                            }
-                                                        },
+                                                        text = playlistDescription,
                                                     limitLine = 3,
                                                     onTimeClicked = {},
                                                     onURLClicked = { url ->
                                                         uriHandler.openUri(url)
                                                     },
                                                 )
+                                                }
                                                 Text(
                                                     text =
                                                         if (data.isRadio) {
@@ -1041,7 +996,6 @@ fun PlaylistScreen(
                                                             stringResource(
                                                                 Res.string.album_length,
                                                                 (data.trackCount).toString(),
-                                                                "",
                                                             )
                                                         },
                                                     color = Color.White,
@@ -1076,6 +1030,7 @@ fun PlaylistScreen(
                                         forceDark = true,
                                         isPlaying = true,
                                         track = item,
+                                        showDuration = true,
                                         onMoreClickListener = { onItemMoreClick(it) },
                                         onClickListener = {
                                             Logger.w("PlaylistScreen", "index: $index")
@@ -1096,6 +1051,7 @@ fun PlaylistScreen(
                                         forceDark = true,
                                         isPlaying = false,
                                         track = item,
+                                        showDuration = true,
                                         onMoreClickListener = { onItemMoreClick(it) },
                                         onClickListener = {
                                             Logger.w("PlaylistScreen", "index: $index")

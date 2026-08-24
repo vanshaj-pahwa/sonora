@@ -59,12 +59,34 @@ import app.vanshajpahwa.sonora.resources.shuffle_not_available
 import app.vanshajpahwa.sonora.resources.synced
 import app.vanshajpahwa.sonora.resources.syncing
 import app.vanshajpahwa.sonora.resources.view_count
+import app.vanshajpahwa.domain.repository.ArtistRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 class PlaylistViewModel(
     private val songRepository: SongRepository,
     private val localPlaylistRepository: LocalPlaylistRepository,
     private val playlistRepository: PlaylistRepository,
+    private val artistRepository: ArtistRepository,
 ) : BaseViewModel() {
+    /**
+     * The author's picture, when the device already has one. Read from Room, never fetched, exactly
+     * as the album page does for its artist.
+     */
+    private val _authorId = MutableStateFlow<String?>(null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val authorThumbnail: StateFlow<String?> =
+        _authorId
+            .flatMapLatest { id ->
+                if (id.isNullOrBlank()) flowOf(null) else artistRepository.getArtistById(id).map { it?.thumbnails }
+            }.stateIn(viewModelScope, WhileSubscribed(5_000), null)
+
+    fun setAuthorId(id: String?) {
+        _authorId.value = id
+    }
+
     val downloadUtils: DownloadHandler by inject<DownloadHandler>()
     private var _uiState = MutableStateFlow<PlaylistUIState>(Loading)
     val uiState: StateFlow<PlaylistUIState> = _uiState

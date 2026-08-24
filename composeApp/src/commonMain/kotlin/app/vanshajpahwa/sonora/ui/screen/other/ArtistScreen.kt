@@ -103,6 +103,8 @@ import app.vanshajpahwa.sonora.extension.toSquareThumbnailUrl
 import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.ui.component.CenterLoadingBox
 import app.vanshajpahwa.sonora.ui.component.CollapsingToolbarParallaxEffect
+import app.vanshajpahwa.sonora.ui.component.DetailCircleButton
+import app.vanshajpahwa.sonora.ui.component.DetailActionRow
 import app.vanshajpahwa.sonora.ui.component.rememberHolderPainter
 import app.vanshajpahwa.sonora.ui.component.DescriptionView
 import app.vanshajpahwa.sonora.ui.component.EndOfPage
@@ -433,92 +435,39 @@ fun ArtistScreen(
 
                                     // Apple Music-style action row: [Radio][Shuffle pill][Follow] centered.
                                     // In Sonora "play" an artist == shuffle, so the big middle button is Shuffle.
-                                    Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 32.dp)
-                                                .padding(vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        // Radio — side button: outlined accent (yellow) circle with an
-                                        // accent-tinted icon over a transparent fill, matching the reference.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .clip(CircleShape)
-                                                    .border(1.5.dp, artistAccent, CircleShape)
-                                                    .clickable {
-                                                        val param = state.data.radioParam
-                                                        if (param != null) {
-                                                            viewModel.onRadioClick(param)
-                                                        } else {
-                                                            viewModel.makeToast(runBlocking { getString(Res.string.error) })
-                                                        }
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = SonoraIcons.Sensors,
+                                    // Same cluster as album and playlist: a primary pill flanked by
+                                    // circular secondaries. Playing an artist means shuffling them,
+                                    // so Shuffle is the pill here rather than Play. Follow keeps its
+                                    // filled state, which is information, while sharing the shape.
+                                    DetailActionRow(
+                                        isPlaying = false,
+                                        playLabel = "Play",
+                                        onPlayPause = { viewModel.onPlayPopularClick() },
+                                        leading = {
+                                            DetailCircleButton(
+                                                icon = SonoraIcons.Sensors,
                                                 contentDescription = "Radio",
-                                                tint = artistAccent,
-                                                modifier = Modifier.size(22.dp),
+                                                onClick = {
+                                                    state.data.radioParam?.let { viewModel.onRadioClick(it) }
+                                                },
                                             )
-                                        }
-                                        // Shuffle — primary "play" for an artist. Circular icon button filled
-                                        // with the artist accent (white fallback); icon uses the dark page
-                                        // background color so it stays legible on a bright accent.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(64.dp)
-                                                    .clip(CircleShape)
-                                                    .background(artistAccent)
-                                                    .clickable {
-                                                        val param = state.data.shuffleParam
-                                                        if (param != null) {
-                                                            viewModel.onShuffleClick(param)
-                                                        } else {
-                                                            viewModel.makeToast(runBlocking { getString(Res.string.error) })
-                                                        }
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = SonoraIcons.Shuffle,
-                                                contentDescription = "Shuffle",
-                                                tint = mutedPaletteBg,
-                                                modifier = Modifier.size(28.dp),
-                                            )
-                                        }
-                                        // Follow — side button matching Radio: outlined accent (yellow)
-                                        // circle when not following; fills with the accent (icon flips to
-                                        // the dark page bg) once followed, so the state reads at a glance.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .clip(CircleShape)
-                                                    .background(if (isFollowed) artistAccent else Color.Transparent)
-                                                    .border(1.5.dp, artistAccent, CircleShape)
-                                                    .clickable {
-                                                        viewModel.updateFollowed(
-                                                            if (isFollowed) 0 else 1,
-                                                            state.data.channelId ?: return@clickable,
-                                                        )
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = if (isFollowed) SonoraIcons.Check else SonoraIcons.PersonAdd,
+                                        },
+                                        trailing = {
+                                            DetailCircleButton(
+                                                icon = if (isFollowed) SonoraIcons.Check else SonoraIcons.PersonAdd,
                                                 contentDescription = if (isFollowed) "Followed" else "Follow",
-                                                tint = if (isFollowed) mutedPaletteBg else artistAccent,
-                                                modifier = Modifier.size(22.dp),
+                                                tint = if (isFollowed) Color.Black else Color.White,
+                                                containerColor =
+                                                    if (isFollowed) artistAccent else Color.White.copy(alpha = 0.12f),
+                                                onClick = {
+                                                    viewModel.updateFollowed(
+                                                        if (isFollowed) 0 else 1,
+                                                        state.data.channelId ?: return@DetailCircleButton,
+                                                    )
+                                                },
                                             )
-                                        }
-                                    }
+                                        },
+                                    )
                                 }
                             }
                             item(contentType = "sections") {
@@ -855,6 +804,7 @@ private fun ArtistSections(
                         forceDark = true,
                         track = song,
                         isPlaying = song.videoId == playingTrack,
+                        showDuration = true,
                         modifier = Modifier.fillMaxWidth(),
                         onMoreClickListener = {
                             onTrackMore(song)

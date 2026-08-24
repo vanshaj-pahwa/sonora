@@ -229,6 +229,16 @@ interface DatabaseDao {
     suspend fun getAllSongs(limit: Int): List<SongEntity>
 
     /**
+     * Everything in the library, newest first, as a live flow.
+     *
+     * The suspend getAllSongs above emits once and never again, so a Home tile built on it froze at
+     * whatever was newest when the screen first composed. This is also deliberately unfiltered: the
+     * Recently added tile counts what has been added, which is what the screen behind it lists.
+     */
+    @Query("SELECT * FROM song ORDER BY inLibrary DESC LIMIT :limit OFFSET 0")
+    fun getAllSongsAsFlow(limit: Int): Flow<List<SongEntity>>
+
+    /**
      * Songs the user has actually played, newest first.
      *
      * The totalPlayTime filter is what separates played from merely stored. The song table holds
