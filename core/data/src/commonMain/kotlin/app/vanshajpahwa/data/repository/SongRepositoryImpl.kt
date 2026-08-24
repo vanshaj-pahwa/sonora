@@ -141,17 +141,28 @@ internal class SongRepositoryImpl(
         likeStatus: Int,
     ) = withContext(Dispatchers.Main) {
         localDataSource.updateLiked(likeStatus, videoId)
-//        if (dataStoreManager.combineLocalAndYouTubeLiked.first() == TRUE) {
-//            if (likeStatus == 1) {
-//                addToYouTubeLiked(videoId).collect { result ->
-//                    Logger.d(TAG, "updateLikeStatus -> addToYouTubeLiked: $result")
-//                }
-//            } else {
-//                removeFromYouTubeLiked(videoId).collect { result ->
-//                    Logger.d(TAG, "updateLikeStatus -> removeFromYouTubeLiked: $result")
-//                }
-//            }
-//        }
+        // The heart is the only like control, so it is what carries the like to YouTube Music.
+        //
+        // The player used to show a second button beside it, a plus that became a tick, purely to
+        // push the track into YouTube's Liked Music. Two controls for one idea meant a song could be
+        // a local favourite and not liked upstream, or the reverse, with nothing on screen saying
+        // which was which. One heart now does both, and "Combine local and YouTube liked" in
+        // settings decides whether the second half happens. That switch was already on screen; the
+        // code it was meant to drive was commented out, so it silently did nothing (upstream #626).
+        //
+        // Failures are swallowed inside addToYouTubeLiked and removeFromYouTubeLiked on purpose:
+        // the local like is the source of truth and must not be undone because the network was out.
+        if (dataStoreManager.combineLocalAndYouTubeLiked.first() == TRUE) {
+            if (likeStatus == 1) {
+                addToYouTubeLiked(videoId).collect { result ->
+                    Logger.d(TAG, "updateLikeStatus -> addToYouTubeLiked: $result")
+                }
+            } else {
+                removeFromYouTubeLiked(videoId).collect { result ->
+                    Logger.d(TAG, "updateLikeStatus -> removeFromYouTubeLiked: $result")
+                }
+            }
+        }
     }
 
     override fun updateSongInLibrary(

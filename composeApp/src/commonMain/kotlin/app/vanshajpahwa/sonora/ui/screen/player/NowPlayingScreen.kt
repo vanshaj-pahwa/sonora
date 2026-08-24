@@ -169,8 +169,6 @@ import app.vanshajpahwa.sonora.ui.component.QueueBottomSheet
 import app.vanshajpahwa.sonora.ui.component.VoteLyricsDialog
 import app.vanshajpahwa.sonora.ui.component.liquidGlass
 import app.vanshajpahwa.sonora.ui.component.rememberHolderPainter
-import app.vanshajpahwa.sonora.ui.icon.AddCircleOutline
-import app.vanshajpahwa.sonora.ui.icon.CheckCircle
 import app.vanshajpahwa.sonora.ui.icon.Forward5
 import app.vanshajpahwa.sonora.ui.icon.Fullscreen
 import app.vanshajpahwa.sonora.ui.icon.Info
@@ -1805,48 +1803,6 @@ fun NowPlayingScreenContent(
                                                 }
                                             }
                                         }
-                                        if (sharedViewModel.isUserLoggedIn()) {
-                                            Spacer(modifier = Modifier.size(16.dp))
-                                            Crossfade(
-                                                targetState = likeStatus,
-                                            ) {
-                                                if (it) {
-                                                    IconButton(
-                                                        modifier =
-                                                            Modifier
-                                                                .size(24.dp)
-                                                                .aspectRatio(1f)
-                                                                .clip(
-                                                                    CircleShape,
-                                                                ),
-                                                        onClick = {
-                                                            sharedViewModel.addToYouTubeLiked()
-                                                        },
-                                                    ) {
-                                                        Icon(imageVector = SonoraIcons.CheckCircle, tint = Color.White, contentDescription = "")
-                                                    }
-                                                } else {
-                                                    IconButton(
-                                                        modifier =
-                                                            Modifier
-                                                                .size(24.dp)
-                                                                .aspectRatio(1f)
-                                                                .clip(
-                                                                    CircleShape,
-                                                                ),
-                                                        onClick = {
-                                                            sharedViewModel.addToYouTubeLiked()
-                                                        },
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = SonoraIcons.AddCircleOutline,
-                                                            tint = Color.White,
-                                                            contentDescription = "",
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
                                         Spacer(modifier = Modifier.size(12.dp))
                                         HeartCheckBox(checked = controllerState.isLiked, size = 32) {
                                             sharedViewModel.onUIEvent(UIEvent.ToggleLike)
@@ -2190,52 +2146,6 @@ fun NowPlayingScreenContent(
                                                                             }
                                                                         },
                                                             )
-                                                        }
-                                                    }
-                                                }
-                                                if (sharedViewModel.isUserLoggedIn()) {
-                                                    Spacer(modifier = Modifier.size(16.dp))
-                                                    Crossfade(
-                                                        targetState = likeStatus,
-                                                    ) {
-                                                        if (it) {
-                                                            IconButton(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .size(24.dp)
-                                                                        .aspectRatio(1f)
-                                                                        .clip(
-                                                                            CircleShape,
-                                                                        ),
-                                                                onClick = {
-                                                                    sharedViewModel.addToYouTubeLiked()
-                                                                },
-                                                            ) {
-                                                                Icon(
-                                                                    imageVector = SonoraIcons.CheckCircle,
-                                                                    tint = Color.White,
-                                                                    contentDescription = "",
-                                                                )
-                                                            }
-                                                        } else {
-                                                            IconButton(
-                                                                modifier =
-                                                                    Modifier
-                                                                        .size(24.dp)
-                                                                        .aspectRatio(1f)
-                                                                        .clip(
-                                                                            CircleShape,
-                                                                        ),
-                                                                onClick = {
-                                                                    sharedViewModel.addToYouTubeLiked()
-                                                                },
-                                                            ) {
-                                                                Icon(
-                                                                    imageVector = SonoraIcons.AddCircleOutline,
-                                                                    tint = Color.White,
-                                                                    contentDescription = "",
-                                                                )
-                                                            }
                                                         }
                                                     }
                                                 }
