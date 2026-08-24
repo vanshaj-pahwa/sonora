@@ -383,7 +383,17 @@ interface DatabaseDao {
         videoId: String,
     ): Int
 
-    @Query("SELECT * FROM song WHERE totalPlayTime > 1 ORDER BY totalPlayTime DESC LIMIT 50")
+    /**
+     * Songs the user has actually played, most played first.
+     *
+     * The threshold is > 0, meaning one play counts. totalPlayTime is a play counter, incremented
+     * by one per play, not a duration, so the old > 1 quietly meant "the same song at least twice".
+     * Someone who had played three different tracks once each matched nothing here, and because
+     * this list seeds both the Play it again row and the More like shelves, their Home showed no
+     * trace of anything they had listened to. Recently played used > 0 and did appear, which is
+     * what made the feed look arbitrarily half empty rather than simply new.
+     */
+    @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY totalPlayTime DESC LIMIT 50")
     fun getMostPlayedSongs(): Flow<List<SongEntity>>
 
     @Query("UPDATE song SET downloadState = :downloadState, downloadedAt = :downloadedAt WHERE videoId = :videoId")
