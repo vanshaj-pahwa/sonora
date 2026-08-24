@@ -1,10 +1,9 @@
 # Sonora
 
-Android YouTube Music client. A fork of [SimpMusic](https://github.com/maxrave-dev/SimpMusic)
-(GPL-3.0) by Tuan Minh Nguyen Duc (maxrave-dev), rebranded and reworked by Vanshaj Pahwa.
+Android YouTube Music client built with Compose Multiplatform, by Vanshaj Pahwa.
+Licensed GPL-3.0; attribution lives in `LICENSE` and the README's `## Credits`.
 
 **Respond in English only.** No em dashes, no en dashes, no emoji in code, comments or copy.
-Git email: `vanshajpahwa07@gmail.com`.
 
 ---
 
@@ -34,7 +33,9 @@ anything surprising a reader would otherwise have to rediscover. A one line comm
 only context that survives; a fifteen line essay stops being read. Skip the body only when the
 subject genuinely says everything, which is rare outside `chore` and `docs`.
 
-Reference upstream issues as `maxrave-dev/SimpMusic#626` so the link resolves from this repo.
+Never cite upstream issue numbers or link the upstream tracker, in commit messages or in code
+comments. Describe the defect and its symptom on their own terms; a reader here cannot open
+that tracker anyway, and the description is what stays useful.
 
 One commit, one idea. A refactor and the bug fix it uncovered are two commits, not one.
 
@@ -110,9 +111,10 @@ adb install -r app/build/outputs/apk/debug/app-universal-debug.apk
 adb shell am start -S -n app.vanshajpahwa.sonora.dev/app.vanshajpahwa.sonora.MainActivity
 ```
 
-The device also has upstream `com.maxrave.simpmusic` installed. Always address
-`app.vanshajpahwa.sonora.dev`, and verify `topResumedActivity` contains `sonora` before any
-screenshot.
+Before any screenshot or frame measurement, check `topResumedActivity` contains `sonora` **and**
+that `dumpsys power` reports `mWakefulness=Awake`. A dozing screen still reports a resumed
+activity while rendering nothing, so `gfxinfo` returns zero frames and a 4950ms percentile that
+looks like data and is not.
 
 ---
 
