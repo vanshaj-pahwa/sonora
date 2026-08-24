@@ -36,14 +36,23 @@ stop, imperative mood, 72 characters or fewer. Types in use here:
 
 Add a scope when it narrows things usefully: `fix(auto):`, `perf(player):`.
 
-**Body: a short bulleted list, three to six points.** One line of context first if the subject
-needs it, then bullets. Each bullet is one change or one reason, written as a full sentence. A one
-line commit throws away the only context that survives; a wall of prose stops being read. Skip the
-body only when the subject genuinely says everything, which is rare outside `chore` and `docs`.
+**Body: as long as the change, and no longer.** A one line subject is the whole commit for a one
+line fix, and padding it out with bullets invents significance the change does not have. Add a body
+when there is something a reader could not get from the diff: why it was wrong, what else it
+touched, what was deliberately left alone. When a body earns its place, one line of context first
+if the subject needs it, then bullets, each one change or one reason written as a full sentence.
+Six bullets is a ceiling for a commit that genuinely did six things, not a target.
 
 Never cite upstream issue numbers or link the upstream tracker, in commit messages or in code
 comments. Describe the defect and its symptom on their own terms; a reader here cannot open
 that tracker anyway, and the description is what stays useful.
+
+**Never put raw identifiers or captured data in a commit message.** Channel ids, video ids, rows
+read out of the database, log lines from a debugging session: these are the evidence, not the
+explanation. State the rule they proved, not the values that proved it. "YouTube issues more than
+one channel id for the same artist" is the finding; the two ids that revealed it belong to the
+investigation and not to permanent history. They are also read from the author's own library, and
+a repository is a worse place for that than a scratch file.
 
 One commit, one idea. A refactor and the bug fix it uncovered are two commits, not one.
 
