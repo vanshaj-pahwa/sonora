@@ -72,14 +72,14 @@ jobs:
           body: |
             ### Which APK?
 
-            | File | Install this if |
+            | File | Choose this if |
             |---|---|
-            | `arm64-v8a` | **Almost certainly this one.** Every mainstream phone from roughly 2017 on |
-            | `armeabi-v7a` | An older 32 bit device |
-            | `x86_64` | An emulator, or a Chromebook running Android |
-            | `universal` | You are not sure. Works everywhere, about twice the size |
+            | `arm64-v8a` | You have a phone from the last several years. This covers nearly everyone |
+            | `armeabi-v7a` | You have an older 32-bit device |
+            | `x86_64` | You are using an emulator or a Chromebook |
+            | `universal` | You do not know which to pick. It is larger but runs on anything |
 
-            Android refuses to install an APK built for another architecture, so trying
-            `arm64-v8a` first costs nothing. Requires Android 8.0 or newer.
+            There is no risk in guessing. Android will not install an APK built for a different
+            architecture, so start with `arm64-v8a`. Requires Android 8.0 or newer.
           generate_release_notes: true
           files: dist/*.apk

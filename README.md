@@ -8,21 +8,21 @@ An ad-free YouTube Music client for Android, built with Jetpack Compose.
 
 ## Install
 
-Grab an APK from the [latest release](https://github.com/vanshaj-pahwa/sonora/releases/latest).
-Android 8.0 or newer.
+Download an APK from the [latest release](https://github.com/vanshaj-pahwa/sonora/releases/latest).
+Sonora requires Android 8.0 or newer.
 
-| File | Install this if |
+| File | Choose this if |
 |---|---|
-| `sonora-<version>-arm64-v8a.apk` | **Almost certainly this one.** Every mainstream phone from roughly 2017 on |
-| `sonora-<version>-armeabi-v7a.apk` | An older 32 bit device |
-| `sonora-<version>-x86_64.apk` | An emulator, or a Chromebook running Android |
-| `sonora-<version>-universal.apk` | You are not sure. Works everywhere, about twice the size |
+| `sonora-<version>-arm64-v8a.apk` | You have a phone from the last several years. This covers nearly everyone |
+| `sonora-<version>-armeabi-v7a.apk` | You have an older 32-bit device |
+| `sonora-<version>-x86_64.apk` | You are using an emulator or a Chromebook |
+| `sonora-<version>-universal.apk` | You do not know which to pick. It is larger but runs on anything |
 
-Picking the wrong one is not dangerous: Android refuses to install an APK built for another
-architecture, so try `arm64-v8a` first and fall back to `universal`.
+There is no risk in guessing. Android will not install an APK built for a different architecture,
+so start with `arm64-v8a` and fall back to `universal`.
 
-Android will warn about installing outside the Play Store. That warning is expected for any app
-distributed this way.
+Android shows a warning when installing apps from outside the Play Store. This is expected for any
+sideloaded app.
 
 ## Features
 

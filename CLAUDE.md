@@ -9,6 +9,14 @@ Licensed GPL-3.0; attribution lives in `LICENSE` and the README's `## Credits`.
 
 ## Commits
 
+**Never run `git commit` or `git push` without being asked for that specific commit.** Not as the
+tail of a task, not because the work is finished and looks right. Make the change, say what it is,
+and stop. "Fix X" is an instruction to fix X, never an instruction to publish the fix.
+
+Show user-facing wording, meaning README copy, release notes, strings, and anything else a person
+will read, before it goes anywhere. Wording is the author's to approve, not the implementer's to
+decide.
+
 **Never add a `Co-Authored-By` trailer, or any other trailer.** Not on any commit, ever.
 
 Conventional Commits for the subject line: `type: summary`, lower case after the colon, no full
@@ -28,10 +36,10 @@ stop, imperative mood, 72 characters or fewer. Types in use here:
 
 Add a scope when it narrows things usefully: `fix(auto):`, `perf(player):`.
 
-**Body: two to three short paragraphs.** State the symptom or the reason, then what changed, then
-anything surprising a reader would otherwise have to rediscover. A one line commit throws away the
-only context that survives; a fifteen line essay stops being read. Skip the body only when the
-subject genuinely says everything, which is rare outside `chore` and `docs`.
+**Body: a short bulleted list, three to six points.** One line of context first if the subject
+needs it, then bullets. Each bullet is one change or one reason, written as a full sentence. A one
+line commit throws away the only context that survives; a wall of prose stops being read. Skip the
+body only when the subject genuinely says everything, which is rare outside `chore` and `docs`.
 
 Never cite upstream issue numbers or link the upstream tracker, in commit messages or in code
 comments. Describe the defect and its symptom on their own terms; a reader here cannot open
