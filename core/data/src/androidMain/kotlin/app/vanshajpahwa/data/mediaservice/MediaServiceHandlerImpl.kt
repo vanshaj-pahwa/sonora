@@ -101,6 +101,27 @@ import kotlin.math.pow
 
 private val TAG = "Media3ServiceHandlerImpl"
 
+/**
+ * How much of a track has to play before it counts as a listen, as a percentage of its duration.
+ *
+ * Low enough that a track sampled properly counts, high enough that skipping past one does not.
+ */
+private const val MIN_LISTEN_PERCENT = 20L
+
+/**
+ * Past this much of a track, the listening report files the play as the whole thing rather than as
+ * the exact position, so a track that ran to its end is not recorded a few seconds short.
+ */
+private const val NEAR_COMPLETE_PERCENT = 80L
+
+/**
+ * Threshold for a track whose duration is unknown, where a percentage cannot be worked out.
+ *
+ * Duration arrives as 0 often enough that treating those tracks as ineligible silently excluded
+ * them from the listening report no matter how long they played.
+ */
+private const val MIN_LISTEN_MILLIS_UNKNOWN_DURATION = 30_000L
+
 internal class MediaServiceHandlerImpl(
     private val dataStoreManager: DataStoreManager,
     private val songRepository: SongRepository,
@@ -202,6 +223,14 @@ internal class MediaServiceHandlerImpl(
     private var normalizeVolume = false
 
     private var watchTimeList: ArrayList<Float> = arrayListOf()
+
+    /**
+     * The track already counted for the play currently in progress, so it cannot be counted twice.
+     *
+     * The end of a queue can raise both a transition and STATE_ENDED for the same track. Cleared on
+     * every transition by [onMediaItemTransition].
+     */
+    private var countedPlayVideoId: String? = null
 
     private var volumeNormalizationJob: Job? = null
 
@@ -517,10 +546,10 @@ internal class MediaServiceHandlerImpl(
                                 Logger.w(TAG, "getDataOfNowPlayingState: Updated thumbs $it")
                             }
                         }
-                        songRepository.updateSongInLibrary(now(), songEntity.videoId).singleOrNull().let {
-                            Logger.w(TAG, "getDataOfNowPlayingState: $it")
-                        }
-                        songRepository.updateListenCount(songEntity.videoId)
+                        // Deliberately does NOT record a play. Loading a track is not listening to
+                        // it, and this runs the instant a track becomes current. See
+                        // [mayBeRecordPlay], which counts on the way out once the listen threshold
+                        // has been passed.
                         Logger.w(TAG, "getDataOfNowPlayingState: $songEntity")
                         Logger.w(TAG, "getDataOfNowPlayingState: $track")
                         _nowPlayingState.update {
@@ -2378,6 +2407,10 @@ internal class MediaServiceHandlerImpl(
 
             PlayerConstants.STATE_ENDED -> {
                 _simpleMediaState.value = SimpleMediaState.Ended
+                // The last track of a queue never produces a transition, so without this the one
+                // track most likely to have been played all the way through is the one track that
+                // never counts.
+                nowPlayingState.value.songEntity?.let { mayBeRecordPlay(it, current) }
                 Logger.d(TAG, "onPlaybackStateChanged: Ended")
             }
 
@@ -2426,9 +2459,12 @@ internal class MediaServiceHandlerImpl(
         Logger.w(TAG, "Checking current state before transition ${simpleMediaState.value}")
         val lastPlayed = nowPlayingState.value.songEntity
         val currentState = simpleMediaState.value
-        if (currentState is SimpleMediaState.Progress && lastPlayed != null && lastPlayed.durationSeconds > 0) {
-            mayBeTrackingListeningLocal(lastPlayed, currentState.progress)
+        if (currentState is SimpleMediaState.Progress && lastPlayed != null) {
+            mayBeRecordPlay(lastPlayed, currentState.progress)
         }
+        // Cleared after the outgoing track has had its chance to count, so the incoming one starts
+        // unclaimed. Repeat-one replays the same id and must be allowed to count again.
+        countedPlayVideoId = null
         Logger.w(TAG, "Smooth Switching Transition Current Position: ${player.currentPosition}")
         mayBeNormalizeVolume()
         Logger.w(TAG, "REASON onMediaItemTransition: $reason")
@@ -2470,22 +2506,61 @@ internal class MediaServiceHandlerImpl(
         mayBeSaveRecentSong()
     }
 
-    private fun mayBeTrackingListeningLocal(
+    /**
+     * Records a finished listen, if it lasted long enough to count as one.
+     *
+     * This is the single definition of "a play" in the app. Everything that ranks or dates a song
+     * comes from here: the listen counter behind Most played, the library timestamp behind Recently
+     * played, and the analytics event behind the listening report.
+     *
+     * It runs on the way OUT of a track, never on the way in. The counters used to be written from
+     * [getDataOfNowPlayingState], which fires the moment a track becomes current, so skipping
+     * through a queue to find something wrote a full play and a fresh timestamp for every track it
+     * passed through. Most played became a record of what had been rejected, and Recently played
+     * filled with tracks that were heard for two seconds.
+     *
+     * Two separate counters also used to disagree. The listen count was written on load and the
+     * analytics event was written here behind a threshold, so one over-counted skips while the
+     * other under-counted, and the two screens could never be reconciled. They are now written
+     * together or not at all.
+     *
+     * Only the analytics event honours the local tracking setting. The listen count and the library
+     * timestamp are ordinary library state that Home and the Auto browse tree read, so turning
+     * tracking off makes the listening report stop recording without also emptying the library.
+     *
+     * A track with no known duration still counts, on elapsed time instead of a fraction. Duration
+     * arrives as 0 often enough that requiring it silently excluded those tracks from the listening
+     * report entirely, however long they played.
+     */
+    private fun mayBeRecordPlay(
         song: SongEntity,
-        currentPositionMillis: Long,
+        listenedMillis: Long,
     ) {
+        // Checked and set before launching, not inside the coroutine. Both callers run on the
+        // player's callback thread, so a synchronous claim here is what stops the end of a queue
+        // being counted twice when a transition and STATE_ENDED both land on the same track.
+        if (countedPlayVideoId == song.videoId) return
+        val durationMillis = song.durationSeconds * 1000L
+        val qualified =
+            if (durationMillis > 0) {
+                listenedMillis * 100 >= durationMillis * MIN_LISTEN_PERCENT
+            } else {
+                listenedMillis >= MIN_LISTEN_MILLIS_UNKNOWN_DURATION
+            }
+        if (!qualified) {
+            Logger.d(TAG, "Not enough listening time for ${song.title}, not counting a play")
+            return
+        }
+        countedPlayVideoId = song.videoId
+        Logger.d(TAG, "Counting a play for ${song.title} after $listenedMillis ms")
         coroutineScope.launch {
-            val trackingEnabled = dataStoreManager.localTrackingEnabled.first() == TRUE
-            if (!trackingEnabled) {
+            songRepository.updateSongInLibrary(now(), song.videoId).singleOrNull().let {
+                Logger.w(TAG, "mayBeRecordPlay: library timestamp $it")
+            }
+            songRepository.updateListenCount(song.videoId)
+            if (dataStoreManager.localTrackingEnabled.first() != TRUE) {
                 return@launch
             }
-            val percent = (currentPositionMillis / (song.durationSeconds * 1000f))
-            Logger.w(TAG, "${song.title} - $currentPositionMillis ms listened, duration: ${song.durationSeconds * 1000} ms, percent: $percent")
-            if (percent < 0.2f) {
-                Logger.d(TAG, "Not enough listening time for ${song.title}, skipping tracking")
-                return@launch
-            }
-            Logger.d(TAG, "Tracking listening for ${song.title} at position $currentPositionMillis ms")
             analyticsRepository
                 .insertPlaybackEvent(
                     videoId = song.videoId,
@@ -2493,10 +2568,12 @@ internal class MediaServiceHandlerImpl(
                     albumBrowseId = song.albumId,
                     durationSecond = song.durationSeconds.toLong(),
                     listenedSecond =
-                        if (percent >= 0.8f) {
+                        // Anything past the near-complete mark is recorded as the whole track, so a
+                        // listen that ran to the end is not filed as a few seconds short of one.
+                        if (durationMillis > 0 && listenedMillis * 100 >= durationMillis * NEAR_COMPLETE_PERCENT) {
                             song.durationSeconds.toLong()
                         } else {
-                            (currentPositionMillis / 1000)
+                            listenedMillis / 1000
                         },
                 ).collect {
                     Logger.d(TAG, "Inserted playback event for ${song.title}: $it")

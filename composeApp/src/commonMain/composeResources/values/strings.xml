@@ -596,7 +596,7 @@ Read this to learn how to log in on desktop:
     <string name="open_miniplayer">Open Mini-player</string>
     <string name="quit_app">Quit app</string>
     <string name="local_tracking_title">Local tracking listening history</string>
-    <string name="local_tracking_description">Records what you listen to, on this device only, so Library can show your listening analytics. Turn this off and the analytics screen is hidden.</string>
+    <string name="local_tracking_description">Records how long you listen to each song, on this device only, so Library can show your listening analytics. A song counts once 20% of it has played, or 30 seconds for a song with no known length. Turn this off and the analytics screen is hidden. Most played and Recently played keep working.</string>
     <string name="blog_notification_title">GitHub activity notifications</string>
     <string name="blog_notification_description">Get notified about new public activity</string>
     <string name="crossfading">Crossfading</string>
@@ -624,7 +624,7 @@ Read this to learn how to log in on desktop:
     <string name="import_invalid_file">This file is not a valid Sonora import file. Convert your library to a supported export first.</string>
     <string name="empty_favorite">Songs you like will show up here</string>
     <string name="empty_followed">Artists you follow will show up here</string>
-    <string name="empty_most_played">Play some music and your most played will appear here</string>
+    <string name="empty_most_played">Songs you play most of the way through appear here. Skipping past does not count.</string>
     <string name="empty_downloaded">Downloaded songs will show up here and play offline</string>
     <string name="empty_top_tracks">Listen for a while and your top tracks will appear here</string>
     <string name="empty_top_artists">Listen for a while and your top artists will appear here</string>

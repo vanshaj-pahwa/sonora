@@ -246,6 +246,14 @@ interface DatabaseDao {
      * "what did I listen to", and only this one has a play behind it. It also quietly excludes rows
      * left over from when the entity defaulted its timestamp to now(), so no migration is needed to
      * stop showing them.
+     *
+     * When a song appears here: after it has played for at least 20% of its length, or 30 seconds
+     * if its length is unknown, and then been moved away from. Both columns this reads are written
+     * at that same moment, by mayBeRecordPlay in the media service handler. Nothing appears here for
+     * merely being opened, queued or skipped past, and a song does not appear the instant it starts.
+     *
+     * Both columns used to be written when a track became current instead, so skipping through a
+     * queue filled this list with tracks that were heard for two seconds.
      */
     @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY inLibrary DESC LIMIT :limit OFFSET 0")
     suspend fun getRecentlyPlayedSongs(limit: Int): List<SongEntity>
@@ -402,6 +410,16 @@ interface DatabaseDao {
      * this list seeds both the Play it again row and the More like shelves, their Home showed no
      * trace of anything they had listened to. Recently played used > 0 and did appear, which is
      * what made the feed look arbitrarily half empty rather than simply new.
+     *
+     * When a song appears here: on the same rule as [getRecentSongsAsFlow], after 20% of its length
+     * or 30 seconds where the length is unknown. The counter is incremented once per qualifying
+     * listen, so this ranks by how many times a song was played through rather than by how often it
+     * came up in a queue.
+     *
+     * The first play of a brand new song used to be lost: a song not yet in the table was inserted
+     * with a count of zero and never incremented, so only repeats of already stored songs ever
+     * counted. That is why this list, and the Home shelves built on it, stayed empty for anyone
+     * listening to music they had not heard before.
      */
     @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY totalPlayTime DESC LIMIT 50")
     fun getMostPlayedSongs(): Flow<List<SongEntity>>
