@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sonora badge drawn on the white circle of category and playlist cards.
+  Callers draw it at alpha 0.2, so the bars carry more weight here than in the
+  launcher icon: thin strokes would disappear at that opacity.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M26,44.7 L26,63.3" android:strokeColor="#000000" android:strokeWidth="11" android:strokeLineCap="round" />
+    <path android:pathData="M40,36.7 L40,71.3" android:strokeColor="#000000" android:strokeWidth="11" android:strokeLineCap="round" />
+    <path android:pathData="M54,31.3 L54,76.7" android:strokeColor="#000000" android:strokeWidth="11" android:strokeLineCap="round" />
+    <path android:pathData="M68,36.7 L68,71.3" android:strokeColor="#000000" android:strokeWidth="11" android:strokeLineCap="round" />
+    <path android:pathData="M82,44.7 L82,63.3" android:strokeColor="#000000" android:strokeWidth="11" android:strokeLineCap="round" />
+</vector>

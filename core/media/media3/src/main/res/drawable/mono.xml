@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Media notification small icon (SimpleMediaService.setSmallIcon).
+
+  Android treats a notification small icon as an ALPHA MASK from API 21 on: the
+  colour here is discarded and every opaque pixel is painted with the system
+  tint. So this must be a flat silhouette on a transparent ground, never the
+  gradient launcher icon, or the status bar shows a solid blob.
+
+  Filled rounded rects rather than strokes, and the mark is inset inside the
+  24dp box so the status bar does not clip it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:fillColor="#FFFFFF" android:pathData="M3,10.8 A1.2,1.2 0 0 1 5.4,10.8 L5.4,13.2 A1.2,1.2 0 0 1 3,13.2 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M6.9,9.1 A1.2,1.2 0 0 1 9.3,9.1 L9.3,14.9 A1.2,1.2 0 0 1 6.9,14.9 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M10.8,7.8 A1.2,1.2 0 0 1 13.2,7.8 L13.2,16.2 A1.2,1.2 0 0 1 10.8,16.2 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M14.7,9.1 A1.2,1.2 0 0 1 17.1,9.1 L17.1,14.9 A1.2,1.2 0 0 1 14.7,14.9 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M18.6,10.8 A1.2,1.2 0 0 1 21,10.8 L21,13.2 A1.2,1.2 0 0 1 18.6,13.2 Z" />
+</vector>

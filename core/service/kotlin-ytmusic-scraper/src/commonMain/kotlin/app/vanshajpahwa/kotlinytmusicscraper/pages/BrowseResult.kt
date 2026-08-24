@@ -1,0 +1,13 @@
+package app.vanshajpahwa.kotlinytmusicscraper.pages
+
+import app.vanshajpahwa.kotlinytmusicscraper.models.YTItem
+
+data class BrowseResult(
+    val title: String?,
+    val items: List<Item>,
+) {
+    data class Item(
+        val title: String?,
+        val items: List<YTItem>,
+    )
+}

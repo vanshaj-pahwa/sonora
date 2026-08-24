@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon layer (Android 13+). Single flat colour on purpose: the system
+  recolours this to the wallpaper palette, so the brand blue does not belong here.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group>
+        <path
+            android:pathData="M32,46.7 L32,61.3"
+            android:strokeColor="#000000"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M43,40 L43,68"
+            android:strokeColor="#000000"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M54,36 L54,72"
+            android:strokeColor="#000000"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M65,40 L65,68"
+            android:strokeColor="#000000"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M76,46.7 L76,61.3"
+            android:strokeColor="#000000"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

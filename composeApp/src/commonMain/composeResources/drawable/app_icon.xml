@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  In-app Sonora mark (Credits screen). Same geometry as the launcher icon,
+  but full-bleed since this one is clipped to a circle by the caller.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#000000"
+        android:pathData="M0,0h108v108h-108z" />
+    <group>
+        <path
+            android:pathData="M32,46.7 L32,61.3"
+            android:strokeColor="#00A4FF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M43,40 L43,68"
+            android:strokeColor="#00A4FF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M54,36 L54,72"
+            android:strokeColor="#00A4FF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M65,40 L65,68"
+            android:strokeColor="#00A4FF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M76,46.7 L76,61.3"
+            android:strokeColor="#00A4FF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

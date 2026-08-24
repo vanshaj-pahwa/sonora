@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16:9 video placeholder, light theme. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="108dp"
+    android:viewportWidth="192"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#000000"
+        android:pathData="M0,0h192v108h-192z" />
+    <group>
+        <path android:pathData="M74,46.7 L74,61.3" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M85,40 L85,68" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M96,36 L96,72" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M107,40 L107,68" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M118,46.7 L118,61.3" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+    </group>
+</vector>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sonora mark used at full colour: bottom navigation bar and the review dialog.
+  Rendered with Image, not Icon, so the stroke colour here is what shows.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M28,46 L28,62" android:strokeColor="#00A4FF" android:strokeWidth="9" android:strokeLineCap="round" />
+    <path android:pathData="M41,38.7 L41,69.3" android:strokeColor="#00A4FF" android:strokeWidth="9" android:strokeLineCap="round" />
+    <path android:pathData="M54,34 L54,74" android:strokeColor="#00A4FF" android:strokeWidth="9" android:strokeLineCap="round" />
+    <path android:pathData="M67,38.7 L67,69.3" android:strokeColor="#00A4FF" android:strokeWidth="9" android:strokeLineCap="round" />
+    <path android:pathData="M80,46 L80,62" android:strokeColor="#00A4FF" android:strokeWidth="9" android:strokeLineCap="round" />
+</vector>

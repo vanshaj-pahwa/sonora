@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular app mark, used as the desktop window and mini player icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,0 A54,54 0 1,1 53.99,0 Z" />
+    <group>
+        <path android:pathData="M32,46.7 L32,61.3" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M43,40 L43,68" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M54,36 L54,72" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M65,40 L65,68" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+        <path android:pathData="M76,46.7 L76,61.3" android:strokeColor="#00A4FF" android:strokeWidth="7" android:strokeLineCap="round" />
+    </group>
+</vector>

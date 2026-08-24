@@ -1,0 +1,32 @@
+package app.vanshajpahwa.domain.data.model.browse.artist
+
+import app.vanshajpahwa.domain.data.model.browse.album.Track
+import app.vanshajpahwa.domain.data.model.searchResult.songs.Thumbnail
+import app.vanshajpahwa.domain.data.model.streams.YouTubeWatchEndpoint
+
+data class ArtistBrowse(
+    val albums: Albums?,
+    val channelId: String?,
+    val description: String?,
+    val name: String,
+    val radioId: YouTubeWatchEndpoint?,
+    val related: Related?,
+    val shuffleId: YouTubeWatchEndpoint?,
+    val singles: Singles?,
+    val songs: Songs?,
+    val video: List<ResultVideo>?,
+    val featuredOn: List<ResultPlaylist>?,
+    val videoList: String?,
+    val subscribed: Boolean?,
+    val subscribers: String?,
+    val thumbnails: List<Thumbnail>?,
+    val views: String?,
+    // Artist name-logo image (hidden catalog) + its dominant color (hex); filled in separately.
+    val nameLogoUrl: String? = null,
+    val nameLogoColor: String? = null,
+) {
+    data class Videos(
+        val video: List<Track> = emptyList(),
+        val videoListParam: String? = null,
+    )
+}

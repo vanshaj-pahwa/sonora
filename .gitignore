@@ -1,0 +1,29 @@
+# Build output. The catch-all covers every module, including everything under core/,
+# which used to be a submodule carrying its own ignore rules.
+**/build/
+.gradle
+.kotlin/
+/captures
+.externalNativeBuild
+.cxx
+
+# IDE
+*.iml
+.idea
+.DS_Store
+
+# Local machine config and secrets
+local.properties
+/.mcp.json
+/.claude/settings.local.json
+/.omc/
+
+# Signing keystores and their passwords must never be committed, whatever they are named.
+*.jks
+*.keystore
+keystore.properties
+*.p12
+
+# Dev scratch files
+ign.md
+.docs
