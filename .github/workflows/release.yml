@@ -38,9 +38,18 @@ jobs:
             echo "::warning::No SIGNING_KEY secret set. Publishing UNSIGNED APKs."
           fi
 
+      # The signing action shells out to zipalign and apksigner, which live inside a versioned
+      # build-tools directory. Without being told which one, it guesses a version that may not be
+      # installed on the runner and fails looking for a binary that is not there.
+      - name: Resolve build-tools version
+        if: steps.secrets.outputs.present == 'true'
+        run: echo "BUILD_TOOLS_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)" >> "$GITHUB_ENV"
+
       - name: Sign release
         if: steps.secrets.outputs.present == 'true'
         uses: kevin-david/zipalign-sign-android-release@v2
+        env:
+          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOLS_VERSION }}
         with:
           releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
