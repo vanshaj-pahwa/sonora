@@ -6,6 +6,24 @@ An ad-free YouTube Music client for Android, built with Jetpack Compose.
 
 </div>
 
+## Install
+
+Grab an APK from the [latest release](https://github.com/vanshaj-pahwa/sonora/releases/latest).
+Android 8.0 or newer.
+
+| File | Install this if |
+|---|---|
+| `sonora-<version>-arm64-v8a.apk` | **Almost certainly this one.** Every mainstream phone from roughly 2017 on |
+| `sonora-<version>-armeabi-v7a.apk` | An older 32 bit device |
+| `sonora-<version>-x86_64.apk` | An emulator, or a Chromebook running Android |
+| `sonora-<version>-universal.apk` | You are not sure. Works everywhere, about twice the size |
+
+Picking the wrong one is not dangerous: Android refuses to install an APK built for another
+architecture, so try `arm64-v8a` first and fall back to `universal`.
+
+Android will warn about installing outside the Play Store. That warning is expected for any app
+distributed this way.
+
 ## Features
 
 **Playback**
