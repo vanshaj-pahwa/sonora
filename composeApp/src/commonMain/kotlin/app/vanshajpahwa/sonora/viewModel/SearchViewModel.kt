@@ -39,6 +39,13 @@ import app.vanshajpahwa.sonora.resources.playlists
 import app.vanshajpahwa.sonora.resources.podcasts
 import app.vanshajpahwa.sonora.resources.songs
 import app.vanshajpahwa.sonora.resources.videos
+import app.vanshajpahwa.domain.data.entities.SongEntity
+import app.vanshajpahwa.domain.repository.SongRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 
 // State cho tìm kiếm
 data class SearchScreenState(
@@ -96,7 +103,36 @@ class SearchViewModel(
     private val homeRepository: HomeRepository,
     private val commonRepository: CommonRepository,
     private val moodArtworkStore: MoodArtworkStore,
+    private val songRepository: SongRepository,
 ) : BaseViewModel() {
+    /**
+     * Matches from the user's own library, shown above the network results.
+     *
+     * Search only ever asked YouTube, so with no connection it returned nothing, and even online a
+     * song downloaded a minute earlier could not be found without a round trip. This reads Room, so
+     * it answers instantly and keeps answering offline.
+     *
+     * Debounced because it runs on every keystroke, and flatMapLatest so an earlier query's results
+     * cannot arrive after a later one's and overwrite them.
+     */
+    private val _localQuery = MutableStateFlow("")
+
+    @OptIn(kotlinx.coroutines.FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val localResults: StateFlow<List<SongEntity>> =
+        _localQuery
+            .debounce(LOCAL_SEARCH_DEBOUNCE_MS)
+            .flatMapLatest { query ->
+                if (query.isBlank()) {
+                    flowOf(emptyList())
+                } else {
+                    songRepository.searchLocalSongs(query, LOCAL_SEARCH_LIMIT)
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun searchLocal(query: String) {
+        _localQuery.value = query
+    }
+
     /**
      * Things the user actually opened, newest first, rather than the words they typed.
      *
@@ -536,3 +572,9 @@ class SearchViewModel(
         }
     }
 }
+
+/** Long enough to skip most keystrokes, short enough that results feel immediate. */
+private const val LOCAL_SEARCH_DEBOUNCE_MS = 150L
+
+/** Enough to be useful as a header section without pushing the network results off screen. */
+private const val LOCAL_SEARCH_LIMIT = 10

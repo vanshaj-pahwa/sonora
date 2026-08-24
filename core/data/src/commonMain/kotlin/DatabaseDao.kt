@@ -396,6 +396,27 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY totalPlayTime DESC LIMIT 50")
     fun getMostPlayedSongs(): Flow<List<SongEntity>>
 
+    /**
+     * Songs already on the device whose title or artist contains [query].
+     *
+     * Search only ever asked YouTube, so a song downloaded a minute ago could not be found without
+     * a round trip, and with no connection search returned nothing at all. This runs first and
+     * costs no network.
+     *
+     * artistName is stored as a single converted string, so LIKE matches across the whole list
+     * rather than a single name. Ordered by play count so the version of a track the user actually
+     * listens to surfaces above a duplicate they imported once.
+     */
+    @Query(
+        "SELECT * FROM song WHERE title LIKE '%' || :query || '%' " +
+            "OR artistName LIKE '%' || :query || '%' " +
+            "ORDER BY totalPlayTime DESC LIMIT :limit",
+    )
+    fun searchLocalSongs(
+        query: String,
+        limit: Int,
+    ): Flow<List<SongEntity>>
+
     @Query("UPDATE song SET downloadState = :downloadState, downloadedAt = :downloadedAt WHERE videoId = :videoId")
     suspend fun updateDownloadState(
         downloadState: Int,

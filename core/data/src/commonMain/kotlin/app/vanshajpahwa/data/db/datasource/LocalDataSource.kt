@@ -150,6 +150,11 @@ internal class LocalDataSource(
      */
     suspend fun insertSongs(songs: List<SongEntity>) = databaseDao.insertSongs(songs)
 
+    fun searchLocalSongs(
+        query: String,
+        limit: Int,
+    ) = databaseDao.searchLocalSongs(query, limit)
+
     suspend fun updateThumbnailsSongEntity(
         thumbnail: String,
         videoId: String,

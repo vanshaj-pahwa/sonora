@@ -50,6 +50,12 @@ interface SongRepository {
      */
     suspend fun insertSongs(songs: List<SongEntity>)
 
+    /** Songs on the device matching [query] by title or artist. No network. */
+    fun searchLocalSongs(
+        query: String,
+        limit: Int = 20,
+    ): Flow<List<SongEntity>>
+
     fun updateThumbnailsSongEntity(
         thumbnail: String,
         videoId: String,

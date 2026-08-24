@@ -151,6 +151,7 @@ import app.vanshajpahwa.sonora.resources.clear_search_history
 import app.vanshajpahwa.sonora.resources.error_occurred
 import app.vanshajpahwa.sonora.resources.everything_you_need
 import app.vanshajpahwa.sonora.resources.in_search
+import app.vanshajpahwa.sonora.resources.in_your_library
 import app.vanshajpahwa.sonora.resources.no_results_found
 import app.vanshajpahwa.sonora.resources.playlists
 import app.vanshajpahwa.sonora.resources.recently
@@ -175,6 +176,7 @@ fun SearchScreen(
     val uriHandler = LocalUriHandler.current
     val focusManager = LocalFocusManager.current
     val searchScreenState by searchViewModel.searchScreenState.collectAsStateWithLifecycle()
+    val localResults by searchViewModel.localResults.collectAsStateWithLifecycle()
     val uiState by searchViewModel.searchScreenUIState.collectAsStateWithLifecycle()
     val searchHistory by searchViewModel.searchHistory.collectAsStateWithLifecycle()
     val recentlyOpened by searchViewModel.recentlyOpened.collectAsStateWithLifecycle()
@@ -272,6 +274,9 @@ fun SearchScreen(
         if (searchText.isNotEmpty() && isFocused) {
             searchViewModel.suggestQuery(searchText)
         }
+        // Runs on every keystroke, unlike the network search which waits for submit. Reading Room
+        // is cheap and it is the only search that works with no connection.
+        searchViewModel.searchLocal(searchText)
     }
 
     LaunchedEffect(isSearchSubmitted) {
@@ -798,7 +803,10 @@ fun SearchScreen(
                                                     SearchType.PODCASTS -> searchScreenState.searchPodcastsResult
                                                 }
 
-                                            Crossfade(targetState = currentResults.isNotEmpty()) {
+                                            // Local matches alone are enough to show the list. Gating on the
+                                            // remote results meant that with no connection the library section
+                                            // was built and then never drawn.
+                                            Crossfade(targetState = currentResults.isNotEmpty() || localResults.isNotEmpty()) {
                                                 if (it) {
                                                     LazyColumn(
                                                         contentPadding =
@@ -810,6 +818,41 @@ fun SearchScreen(
                                                             ),
                                                         state = resultsState,
                                                     ) {
+                                                        if (localResults.isNotEmpty()) {
+                                                            item(key = "local_header") {
+                                                                Text(
+                                                                    text = stringResource(Res.string.in_your_library),
+                                                                    style = typo().labelMedium,
+                                                                    color = MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp),
+                                                                )
+                                                            }
+                                                            items(localResults, key = { "local_" + it.videoId }) { song ->
+                                                                val localTrack = song.toTrack()
+                                                                SongFullWidthItems(
+                                                                    track = localTrack,
+                                                                    isPlaying = song.videoId == currentVideoId,
+                                                                    modifier = Modifier,
+                                                                    onMoreClickListener = { onMoreClick(song) },
+                                                                    onClickListener = {
+                                                                        searchViewModel.setQueueData(
+                                                                            QueueData.Data(
+                                                                                listTracks = arrayListOf(localTrack),
+                                                                                firstPlayedTrack = localTrack,
+                                                                                playlistId = "RDAMVM${song.videoId}",
+                                                                                playlistName = song.title,
+                                                                                playlistType = PlaylistType.RADIO,
+                                                                                continuation = null,
+                                                                            ),
+                                                                        )
+                                                                        searchViewModel.loadMediaItem(localTrack, Config.SONG_CLICK)
+                                                                    },
+                                                                    onAddToQueue = {
+                                                                        sharedViewModel.addListToQueue(arrayListOf(localTrack))
+                                                                    },
+                                                                )
+                                                            }
+                                                        }
                                                         items(currentResults) { result ->
                                                             when (result) {
                                                                 is SongsResult -> {

@@ -609,6 +609,7 @@ Read this to learn how to log in on desktop:
     <string name="scale">Scale</string>
     <string name="home_offline_title">Couldn't load home</string>
     <string name="offline_banner">You're offline</string>
+    <string name="in_your_library">In your library</string>
     <string name="home_offline_subtitle">This can be a dropped connection or a hiccup at the other end. Try again, or play something you have downloaded.</string>
     <string name="listen_to_downloaded">Listen to downloaded music</string>
     <string name="playing_on_device">Playing on %1$s</string>
