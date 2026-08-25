@@ -8,8 +8,11 @@ import app.vanshajpahwa.domain.data.entities.AlbumEntity
 import app.vanshajpahwa.domain.data.entities.FollowedArtistSingleAndAlbum
 import app.vanshajpahwa.domain.data.model.browse.album.AlbumBrowse
 import app.vanshajpahwa.domain.data.model.searchResult.albums.AlbumsResult
+import app.vanshajpahwa.domain.data.model.searchResult.songs.Artist
+import app.vanshajpahwa.domain.data.model.searchResult.songs.Thumbnail
 import app.vanshajpahwa.domain.repository.AlbumRepository
 import app.vanshajpahwa.domain.utils.Resource
+import app.vanshajpahwa.domain.utils.toTrack
 import app.vanshajpahwa.kotlinytmusicscraper.YouTube
 import app.vanshajpahwa.kotlinytmusicscraper.models.AlbumItem
 import app.vanshajpahwa.logger.Logger
@@ -110,10 +113,58 @@ internal class AlbumRepositoryImpl(
                         emit(Resource.Success(parseAlbumData(result)))
                     }.onFailure { e ->
                         Logger.d(TAG, "getAlbumData -> error: ${e.message}")
-                        emit(Resource.Error(e.message.toString()))
+                        // Albums are written to the album table when opened, so fall back to that
+                        // copy before reporting a failure. Without it an album browsed earlier shows
+                        // an error offline, even when its audio is downloaded.
+                        val cached = cachedAlbum(browseId)
+                        if (cached != null) {
+                            Logger.d(TAG, "getAlbumData -> served $browseId from cache")
+                            emit(Resource.Success(cached))
+                        } else {
+                            emit(Resource.Error(e.message.toString()))
+                        }
                     }
             }
         }.flowOn(Dispatchers.IO)
+
+    /**
+     * Rebuilds an album from what the device already stored, or null if too little was kept.
+     *
+     * Null rather than a header with no tracks under it, which reads as a load that never finishes.
+     * Order comes from the album's own track list because `WHERE videoId IN (...)` does not preserve
+     * it, and running order is part of what an album is.
+     */
+    private suspend fun cachedAlbum(browseId: String): AlbumBrowse? {
+        val album = localDataSource.getAlbum(browseId) ?: return null
+        val trackIds = album.tracks.orEmpty()
+        if (trackIds.isEmpty()) return null
+        val byId =
+            localDataSource
+                .getSongByListVideoIdFull(trackIds)
+                .associateBy { it.videoId }
+        val tracks = trackIds.mapNotNull { byId[it]?.toTrack() }
+        if (tracks.isEmpty()) return null
+        return AlbumBrowse(
+            artists =
+                album.artistName.orEmpty().mapIndexed { index, name ->
+                    Artist(id = album.artistId?.getOrNull(index), name = name)
+                },
+            audioPlaylistId = album.audioPlaylistId,
+            description = album.description,
+            duration = album.duration,
+            durationSeconds = album.durationSeconds,
+            // Stored as a single url with no known size. Callers take the last entry, and one
+            // entry is both first and last.
+            thumbnails = album.thumbnails?.let { listOf(Thumbnail(height = 544, url = it, width = 544)) },
+            title = album.title,
+            trackCount = album.trackCount,
+            tracks = tracks,
+            type = album.type,
+            year = album.year,
+            // Not stored. The page hides the row when it is empty.
+            otherVersion = emptyList(),
+        )
+    }
 
     override fun getAlbumMore(
         browseId: String,
