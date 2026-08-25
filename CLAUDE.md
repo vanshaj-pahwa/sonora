@@ -58,6 +58,28 @@ One commit, one idea. A refactor and the bug fix it uncovered are two commits, n
 
 ---
 
+## Comments
+
+**Comment sparingly.** Most code needs none. Reach for one when a reader would otherwise ask "why
+is it like this", and leave the rest to the code. A file where every block carries a paragraph is
+one nobody finishes reading, and the comments stop being noticed exactly when one of them matters.
+
+**Two or three lines is a normal comment.** A paragraph needs to earn itself: a trap that has
+already cost time, a constraint that is not visible from here, a deliberate choice that looks wrong.
+If it is only restating the line below it, delete it.
+
+**Never write the conversation into the code.** A comment is read by someone who was not there. It
+must not mention the chat that produced it, a review, a request, a previous attempt, what a value
+used to be before it was changed, or who decided anything. No "as discussed", no "the user asked
+for", no "this was briefly X", no "reverted from Y", no session or date references.
+
+Describe the code as it stands and why it stands that way. Where the old behaviour genuinely
+explains the shape, state it as a property of the problem, not as a story about editing it: "a Box
+takes the height of its tallest child, so a fixed height here would floor the section" rather than
+"this used to be 300dp and caused a gap". History belongs in git, and git is where to look for it.
+
+---
+
 ## Do not touch these
 
 These look like leftover branding. They are not. Renaming any of them breaks the build or a
