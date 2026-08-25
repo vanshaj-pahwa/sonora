@@ -86,6 +86,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import app.vanshajpahwa.sonora.expect.ui.rememberBackdrop
+import app.vanshajpahwa.sonora.ui.screen.MiniPlayer
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -928,6 +931,9 @@ fun QueueBottomSheet(
     val screenDataState by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
     val songEntity by sharedViewModel.nowPlayingState.map { it?.songEntity }.collectAsState(null)
     val queueData by musicServiceHandler.queueData.collectAsStateWithLifecycle()
+    // The sheet paints its own dark surface, so the player's glass samples that rather than whatever
+    // happens to be behind the sheet.
+    val queueBackdrop = rememberBackdrop(rememberSurfaceDarkColors().container)
     val queue by remember {
         derivedStateOf {
             queueData?.data?.listTracks ?: emptyList()
@@ -1008,6 +1014,7 @@ fun QueueBottomSheet(
             shape = RectangleShape,
             colors = CardDefaults.cardColors().copy(containerColor = rememberSurfaceDarkColors().container),
         ) {
+            Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier =
                     Modifier.padding(
@@ -1024,21 +1031,20 @@ fun QueueBottomSheet(
                             containerColor = Color.Transparent,
                         ),
                     title = {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
+                        // Left aligned, eyebrow over title, the shape every other header in the app
+                        // uses. Centred text with the source beneath it read as a dialog rather than
+                        // as a screen.
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 text = stringResource(Res.string.now_playing_upper),
-                                style = typo().bodyMedium,
-                                color = rememberSurfaceDarkColors().content,
+                                style = typo().bodySmall,
+                                color = rememberSurfaceDarkColors().content.copy(alpha = 0.6f),
+                                maxLines = 1,
                             )
                             Text(
                                 text = screenDataState.playlistName,
-                                style = typo().labelMedium,
+                                style = typo().titleMedium,
                                 color = rememberSurfaceDarkColors().content,
-                                textAlign = TextAlign.Center,
                                 maxLines = 1,
                                 modifier =
                                     Modifier
@@ -1072,48 +1078,44 @@ fun QueueBottomSheet(
                     },
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                // No separate now playing block. The current track is already in the list below,
+                // marked with the accent and the equalizer, and the sheet opens scrolled to it, so a
+                // block above the list showed the same song twice. The player it opens over is also
+                // still showing that track full size, which is where artwork belongs.
+                //
+                // Removing the row from the list instead would have cost the ability to jump back to
+                // something already played, which is a real thing a queue is for.
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = stringResource(Res.string.now_playing),
+                    text = stringResource(Res.string.queue),
                     style = typo().titleMedium,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
-                SongFullWidthItems(
-                    songEntity = songEntity,
-                    isPlaying = false,
-                    onAddToQueue = null,
+                // Its own row rather than pressed against the Queue heading, where it shared a
+                // baseline with a title and read as part of it.
+                Row(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = stringResource(Res.string.queue),
-                        style = typo().titleMedium,
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .weight(1f),
+                        text = stringResource(Res.string.endless_queue),
+                        style = typo().bodyMedium,
+                        color = rememberSurfaceDarkColors().content,
+                        modifier = Modifier.weight(1f),
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(Res.string.endless_queue),
-                            style = typo().bodySmall,
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                        )
-                        Switch(
-                            checked = endlessQueueEnable,
-                            onCheckedChange = {
-                                coroutineScope.launch {
-                                    dataStoreManager.setEndlessQueue(it)
-                                }
-                            },
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                    }
+                    Switch(
+                        checked = endlessQueueEnable,
+                        onCheckedChange = {
+                            coroutineScope.launch {
+                                dataStoreManager.setEndlessQueue(it)
+                            }
+                        },
+                    )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 LazyColumn(
                     horizontalAlignment = Alignment.Start,
                     state = lazyListState,
@@ -1174,6 +1176,7 @@ fun QueueBottomSheet(
                                 SongFullWidthItems(
                                     track = track,
                                     isPlaying = track.videoId == songEntity?.videoId,
+                                    showDuration = true,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth(),
@@ -1208,6 +1211,30 @@ fun QueueBottomSheet(
                         EndOfPage()
                     }
                 }
+            }
+            // Floated over the list rather than placed after it, so the controls stay reachable
+            // while scrolling a long queue. Tapping it closes the sheet, which returns to the player
+            // it was opened from rather than stacking another copy of the same screen on top.
+            MiniPlayer(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .height(56.dp),
+                backdrop = queueBackdrop,
+                onClick = {
+                    coroutineScope.launch {
+                        sheetState.hide()
+                        onDismiss()
+                    }
+                },
+                onClose = {
+                    sharedViewModel.stopPlayer()
+                    onDismiss()
+                },
+            )
             }
         }
     }

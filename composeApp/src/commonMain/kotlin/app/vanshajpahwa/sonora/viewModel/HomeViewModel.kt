@@ -66,7 +66,13 @@ private const val TAG = "HomeViewModel"
 private const val SHELF_ROTATION_MS = 10_000L
 
 @OptIn(FlowPreview::class)
-private const val PLAY_IT_AGAIN_COUNT = 3
+/**
+ * How many songs the rotation shelf offers.
+ *
+ * Six rather than three: three is one row, and a single row of a library someone has actually built
+ * reads as the app having little to give back. The row renders three across, so this fills two.
+ */
+private const val PLAY_IT_AGAIN_COUNT = 6
 
 class HomeViewModel(
     private val dataStoreManager: DataStoreManager,
@@ -529,7 +535,13 @@ class HomeViewModel(
                 HomeLocalSection.MostPlayed -> mostPlayed.value
                 HomeLocalSection.Liked -> liked.value
                 HomeLocalSection.Downloaded -> downloaded.value
-                HomeLocalSection.Resume -> listOfNotNull(resumeSong.value)
+                // The song to resume, then everything else recently played behind it. A queue of
+                // one ends the moment that song does, so resuming used to buy a single track and
+                // silence. The endless queue would rescue it, but only after a round trip, and
+                // there is no reason to ask the network for something the library already has.
+                HomeLocalSection.Resume ->
+                    (listOfNotNull(resumeSong.value) + recent.value)
+                        .distinctBy { it.videoId }
             }
         val track = list.find { it.videoId == videoId } ?: return
         setQueueData(

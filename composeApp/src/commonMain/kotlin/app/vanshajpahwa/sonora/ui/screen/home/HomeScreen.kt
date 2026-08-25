@@ -612,7 +612,11 @@ fun HomeScreen(
                                             },
                                         )
                                         Spacer(Modifier.height(12.dp))
-                                        HomeTripletRow(items = rotation) { song ->
+                                        // Chunked rather than one long row: the row is a three
+                                        // across grid, so more songs means more rows and every card
+                                        // keeps the size it has in every other section.
+                                        rotation.chunked(3).forEach { rowItems ->
+                                        HomeTripletRow(items = rowItems) { song ->
                                             HomeTrackCard(
                                                 title = song.title,
                                                 subtitle = song.artistName?.joinToString().orEmpty(),
@@ -623,7 +627,9 @@ fun HomeScreen(
                                                 },
                                             )
                                         }
-                                        Spacer(Modifier.height(26.dp))
+                                            Spacer(Modifier.height(12.dp))
+                                        }
+                                        Spacer(Modifier.height(14.dp))
                                     }
                                     if (topArtists.isNotEmpty()) {
                                         HomeSectionHeader(title = stringResource(Res.string.your_top_artists))
@@ -724,6 +730,7 @@ fun HomeScreen(
                                         Column {
                                             HomeSectionHeader(
                                                 title = stringResource(Res.string.more_like, shelf.seedName),
+                                                underline = shelf.seedName,
                                                 actionLabel = stringResource(Res.string.see_all),
                                                 onAction = {
                                                     navController.navigate(

@@ -992,7 +992,11 @@ internal class DataStoreManagerImpl(
 
     override val endlessQueue =
         settingsDataStore.data.map { preferences ->
-            preferences[ENDLESS_QUEUE] ?: FALSE
+            // On by default. When a queue runs out this starts a radio from the last track played
+            // and keeps pulling related songs, so music continues instead of stopping dead at the
+            // end of an album. Off, the app goes silent and asks the listener to decide what next,
+            // which is the moment most sessions end.
+            preferences[ENDLESS_QUEUE] ?: TRUE
         }
 
     override suspend fun setEndlessQueue(endlessQueue: Boolean) {

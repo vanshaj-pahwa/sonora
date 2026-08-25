@@ -1,5 +1,10 @@
 package app.vanshajpahwa.sonora.ui.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.foundation.clickable
@@ -121,9 +126,20 @@ fun UpNextPeekBar(
                 .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (nextTrack != null) {
+        // Cross faded on the id of what is coming, so the strip changes rather than blinks. It
+        // matters most the moment the endless queue arrives: the strip goes from a bare count to a
+        // named song, and a hard swap there reads as a glitch rather than as something arriving.
+        AnimatedContent(
+            targetState = nextTrack,
+            transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+            contentKey = { it?.videoId },
+            modifier = Modifier.weight(1f),
+            label = "upNext",
+        ) { next ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (next != null) {
             AsyncImage(
-                model = nextTrack.thumbnails?.lastOrNull()?.url,
+                model = next.thumbnails?.lastOrNull()?.url,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 placeholder = rememberHolderPainter(),
@@ -143,14 +159,14 @@ fun UpNextPeekBar(
                     maxLines = 1,
                 )
                 Text(
-                    text = nextTrack.title,
+                    text = next.title,
                     style = typo().titleSmall,
                     color = contentColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = nextTrack.artists?.joinToString { it.name }.orEmpty(),
+                    text = next.artists?.joinToString { it.name }.orEmpty(),
                     style = typo().bodySmall,
                     color = contentColor.copy(alpha = 0.6f),
                     maxLines = 1,
@@ -189,6 +205,8 @@ fun UpNextPeekBar(
                     maxLines = 1,
                 )
             }
+        }
+        }
         }
         Icon(
             imageVector = SonoraIcons.QueueMusic,

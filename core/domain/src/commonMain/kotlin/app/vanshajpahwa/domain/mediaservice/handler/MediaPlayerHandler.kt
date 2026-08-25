@@ -268,6 +268,12 @@ data class QueueData(
         val playlistName: String? = null,
         val playlistType: PlaylistType? = null,
         val continuation: String? = null,
+        /**
+         * True once the endless queue has taken over and is playing songs it chose rather than songs
+         * the listener queued. The name of the original playlist stops being true at that point, so
+         * the player says what it is actually doing instead of still claiming the album it began on.
+         */
+        val isRecommendation: Boolean = false,
     )
 
     enum class StateSource {

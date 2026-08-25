@@ -446,15 +446,25 @@ fun SongFullWidthItems(
                 if (showDuration) {
                     // YouTube usually sends a display string; durationSeconds covers the rows that
                     // arrive without one.
-                    val durationLabel =
-                        track?.duration?.takeIf { it.isNotBlank() }
-                            ?: (track?.durationSeconds ?: songEntity?.durationSeconds)
+                    // Only trust the display string when it actually looks like one. Radio and
+                    // related tracks arrive with duration set to a bare count of seconds, which was
+                    // shown verbatim, so a queue read 160 where every other list read 2:40.
+                    val displayDuration = track?.duration?.takeIf { it.isNotBlank() && it.contains(':') }
+                    val totalSeconds =
+                        (track?.durationSeconds ?: songEntity?.durationSeconds)?.takeIf { it > 0 }
+                            ?: track
+                                ?.duration
+                                ?.takeIf { it.isNotBlank() && !it.contains(':') }
+                                ?.trim()
+                                ?.toIntOrNull()
                                 ?.takeIf { it > 0 }
-                                ?.let { total ->
-                                    val mm = total / 60
-                                    val ss = (total % 60).toString().padStart(2, '0')
-                                    "$mm:$ss"
-                                }
+                    val durationLabel =
+                        displayDuration
+                            ?: totalSeconds?.let { total ->
+                                val mm = total / 60
+                                val ss = (total % 60).toString().padStart(2, '0')
+                                "$mm:$ss"
+                            }
                     // Ask for the ones nobody stored a duration for.
                     //
                     // This sits inside the row on purpose: a lazy list composes only what is on
