@@ -58,6 +58,16 @@ import org.jetbrains.compose.resources.painterResource
 import app.vanshajpahwa.sonora.resources.*
 
 /**
+ * Opacity of the capsule when the translucent setting is on, which it is by default.
+ *
+ * Kept low on purpose: seeing content through the bar is the effect, so this trades some label
+ * legibility for it and text scrolling behind can still compete with the tab labels. Raising this
+ * is the wrong fix for that, since sharpness rather than brightness is what competes; a blur or a
+ * gradient behind the labels is, and the liquid glass variant already blurs.
+ */
+private const val TRANSLUCENT_BAR_ALPHA = 0.85f
+
+/**
  * The floating capsule nav bar.
  *
  * Detached from the screen edge rather than spanning it. That is the whole point of the shape: an
@@ -137,7 +147,7 @@ fun AppBottomNavigationBar(
                         .clip(CircleShape)
                         .background(
                             if (isTranslucentBackground) {
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                                MaterialTheme.colorScheme.surface.copy(alpha = TRANSLUCENT_BAR_ALPHA)
                             } else {
                                 MaterialTheme.colorScheme.surfaceContainer
                             },
@@ -185,7 +195,7 @@ fun AppBottomNavigationBar(
                         // behind a fully transparent capsule made the labels unreadable on light
                         // covers, which is the "looks like a bug" case rather than a glass effect.
                         if (isTranslucentBackground) {
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                            MaterialTheme.colorScheme.surface.copy(alpha = TRANSLUCENT_BAR_ALPHA)
                         } else {
                             MaterialTheme.colorScheme.surfaceContainer
                         },
