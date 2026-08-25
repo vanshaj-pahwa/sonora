@@ -147,6 +147,8 @@ fun LibraryItem(
                                         SongFullWidthItems(
                                             songEntity = item as SongEntity,
                                             isPlaying = item.videoId == state.type.playingVideoId,
+                                            // Songs only; album and playlist rows here have none.
+                                            showDuration = true,
                                             modifier = Modifier,
                                             onMoreClickListener = {
                                                 songEntity = item

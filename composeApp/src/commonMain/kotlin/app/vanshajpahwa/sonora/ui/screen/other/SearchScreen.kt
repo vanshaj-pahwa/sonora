@@ -832,6 +832,7 @@ fun SearchScreen(
                                                                 SongFullWidthItems(
                                                                     track = localTrack,
                                                                     isPlaying = song.videoId == currentVideoId,
+                                                                    showDuration = true,
                                                                     modifier = Modifier,
                                                                     onMoreClickListener = { onMoreClick(song) },
                                                                     onClickListener = {
@@ -859,6 +860,7 @@ fun SearchScreen(
                                                                     SongFullWidthItems(
                                                                         track = result.toTrack(),
                                                                         isPlaying = result.videoId == currentVideoId,
+                                                                        showDuration = true,
                                                                         modifier = Modifier,
                                                                         onMoreClickListener = {
                                                                             onMoreClick(result.toTrack().toSongEntity())
@@ -894,6 +896,7 @@ fun SearchScreen(
                                                                     SongFullWidthItems(
                                                                         track = result.toTrack(),
                                                                         isPlaying = result.videoId == currentVideoId,
+                                                                        showDuration = true,
                                                                         modifier = Modifier,
                                                                         onMoreClickListener = {
                                                                             onMoreClick(result.toTrack().toSongEntity())

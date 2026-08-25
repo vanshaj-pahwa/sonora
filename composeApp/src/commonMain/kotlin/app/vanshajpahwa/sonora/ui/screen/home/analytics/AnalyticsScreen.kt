@@ -409,6 +409,7 @@ fun AnalyticsScreen(
                                 SongFullWidthItems(
                                     track = song,
                                     isPlaying = song.videoId == playingTrack,
+                                    showDuration = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     onMoreClickListener = {
                                         onItemMoreClick(pair.second)
@@ -645,6 +646,7 @@ fun AnalyticsScreen(
                                 SongFullWidthItems(
                                     track = song,
                                     isPlaying = song.videoId == playingTrack,
+                                    showDuration = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     onMoreClickListener = {
                                         onItemMoreClick(pair.second)
