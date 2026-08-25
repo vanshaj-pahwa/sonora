@@ -557,15 +557,16 @@ fun MiniPlayer(
                     }
                     // Even 8dp between every control, 12dp to separate the cluster from the title.
                     //
-                    // These were 15, 15, 8, 15: not a rhythm, and 15 is not on the 4dp spacing scale
-                    // the rest of the app uses. The uneven gaps read as the buttons drifting apart,
-                    // and the cluster was 171dp wide, which is width taken straight from the title
-                    // column beside it and why long titles were cut off on the search page.
-                    Spacer(modifier = Modifier.width(12.dp))
+                    // Tight on purpose. Each button already carries its own padding inside a 40dp or
+                    // 48dp target, so the gaps between them are visual space on top of space that is
+                    // already there. Every dp here comes out of the title column, which is the part
+                    // that has to shrink first when the bar is narrow, and narrow is now the normal
+                    // case: collapsed, this sits beside the nav button rather than across the screen.
+                    Spacer(modifier = Modifier.width(4.dp))
                     HeartCheckBox(checked = liked, size = 30, tint = textColor) {
                         sharedViewModel.onUIEvent(UIEvent.ToggleLike)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
                     Crossfade(targetState = loading, label = "") {
                         if (it) {
                             Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -581,9 +582,8 @@ fun MiniPlayer(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Skip is the other control worth having without opening Now Playing. The title
-                    // column is weight(1f) and already marquees, so it gives up the width for this.
+                    Spacer(modifier = Modifier.width(2.dp))
+                    // Skip is the other control worth having without opening Now Playing.
                     Box(
                         modifier =
                             Modifier
@@ -604,7 +604,7 @@ fun MiniPlayer(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
                 // Liquid glass keeps the line, because the container fill has nothing to fill: the
                 // surface is transparent by design in that mode, so tinting a fraction of it would

@@ -98,7 +98,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
 import app.vanshajpahwa.sonora.resources.album_length
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.podcasts
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -362,17 +361,19 @@ fun PodcastScreen(
                                                 }
                                             }
 
-                                            // Description
                                             val uriHandler = LocalUriHandler.current
-                                            DescriptionView(
-                                                modifier = Modifier.padding(top = 8.dp),
-                                                text = data.description ?: stringResource(Res.string.no_description),
-                                                limitLine = 3,
-                                                onTimeClicked = {},
-                                                onURLClicked = { url ->
-                                                    uriHandler.openUri(url)
-                                                },
-                                            )
+                                            val podcastDescription = data.description?.takeIf { it.isNotBlank() }
+                                            if (podcastDescription != null) {
+                                                DescriptionView(
+                                                    modifier = Modifier.padding(top = 8.dp),
+                                                    text = podcastDescription,
+                                                    limitLine = 3,
+                                                    onTimeClicked = {},
+                                                    onURLClicked = { url ->
+                                                        uriHandler.openUri(url)
+                                                    },
+                                                )
+                                            }
 
                                             Text(
                                                 text =

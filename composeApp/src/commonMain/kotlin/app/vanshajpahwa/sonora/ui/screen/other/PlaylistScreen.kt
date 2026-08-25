@@ -168,7 +168,6 @@ import app.vanshajpahwa.sonora.resources.baseline_downloaded
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.downloading
 import app.vanshajpahwa.sonora.resources.error
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.playlist
 import app.vanshajpahwa.sonora.resources.radio
 import app.vanshajpahwa.sonora.resources.search

@@ -230,7 +230,6 @@ import app.vanshajpahwa.sonora.resources.mime_type
 import app.vanshajpahwa.sonora.resources.move_down
 import app.vanshajpahwa.sonora.resources.move_up
 import app.vanshajpahwa.sonora.resources.no_album
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.no_playlist_found
 import app.vanshajpahwa.sonora.resources.now_playing
 import app.vanshajpahwa.sonora.resources.now_playing_upper
@@ -820,26 +819,31 @@ fun InfoPlayerBottomSheet(
                     style = typo().bodyMedium,
                     textAlign = TextAlign.Center,
                 )
-                Text(
-                    text = stringResource(Res.string.description),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                    textAlign = TextAlign.Center,
-                    style = typo().labelMedium,
-                    color = rememberSurfaceDarkColors().content,
-                )
-                Text(
-                    text = screenDataState.songInfoData?.description ?: stringResource(Res.string.no_description),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(align = Alignment.CenterVertically)
-                            .padding(horizontal = 10.dp),
-                    style = typo().bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
+                // Heading and body together, or neither. A label over the words "No description"
+                // spends two rows saying there is nothing here.
+                val songDescription = screenDataState.songInfoData?.description?.takeIf { it.isNotBlank() }
+                if (songDescription != null) {
+                    Text(
+                        text = stringResource(Res.string.description),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                        textAlign = TextAlign.Center,
+                        style = typo().labelMedium,
+                        color = rememberSurfaceDarkColors().content,
+                    )
+                    Text(
+                        text = songDescription,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(align = Alignment.CenterVertically)
+                                .padding(horizontal = 10.dp),
+                        style = typo().bodyMedium,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Text(
                     text = stringResource(Res.string.youtube_url),
                     modifier =

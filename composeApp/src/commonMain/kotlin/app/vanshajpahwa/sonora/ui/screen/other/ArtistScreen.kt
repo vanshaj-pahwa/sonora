@@ -98,6 +98,7 @@ import app.vanshajpahwa.sonora.extension.getColorFromPalette
 import app.vanshajpahwa.sonora.extension.getScreenSizeInfo
 import app.vanshajpahwa.sonora.extension.getStringBlocking
 import app.vanshajpahwa.sonora.extension.rgbFactor
+import app.vanshajpahwa.sonora.extension.toShortViewCount
 import app.vanshajpahwa.sonora.extension.toImmersiveBackground
 import app.vanshajpahwa.sonora.extension.toSquareThumbnailUrl
 import app.vanshajpahwa.sonora.getPlatform
@@ -148,7 +149,6 @@ import app.vanshajpahwa.sonora.resources.error
 import app.vanshajpahwa.sonora.resources.featured_inArtist
 import app.vanshajpahwa.sonora.resources.follow
 import app.vanshajpahwa.sonora.resources.followed
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.popular
 import app.vanshajpahwa.sonora.resources.see_all
 import app.vanshajpahwa.sonora.resources.related_artists
@@ -387,8 +387,8 @@ fun ArtistScreen(
                                                 }
                                                 val meta =
                                                     listOfNotNull(
-                                                        state.data.subscribers?.takeIf { it.isNotBlank() },
-                                                        state.data.playCount?.takeIf { it.isNotBlank() },
+                                                        state.data.subscribers?.takeIf { it.isNotBlank() }?.toShortViewCount(),
+                                                        state.data.playCount?.takeIf { it.isNotBlank() }?.toShortViewCount(),
                                                     ).joinToString(" · ")
                                                 if (meta.isNotBlank()) {
                                                     Spacer(modifier = Modifier.height(4.dp))
@@ -571,7 +571,7 @@ fun ArtistScreen(
                             ) {
                                 Row {
                                     Text(
-                                        text = state.data.subscribers ?: stringResource(Res.string.unknown),
+                                        text = state.data.subscribers?.toShortViewCount() ?: stringResource(Res.string.unknown),
                                         style = typo().bodySmall,
                                         color = Color.White,
                                         textAlign = TextAlign.Start,
@@ -884,7 +884,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.singles?.results ?: emptyList()) { single ->
+                    items(
+                                        (state.data.singles?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { single ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -952,7 +955,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.albums?.results ?: emptyList()) { album ->
+                    items(
+                                        (state.data.albums?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { album ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1019,7 +1025,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.video?.video ?: emptyList()) { video ->
+                    items(
+                                        (state.data.video?.video ?: emptyList()).distinctBy { it.videoId },
+                                        key = { it.videoId },
+                                    ) { video ->
                         HomeItemVideo(
                             forceDark = true,                            onClick = {
                                 val firstQueue: Track = video
@@ -1086,7 +1095,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.featuredOn) { feature ->
+                    items(
+                                        state.data.featuredOn.distinctBy { it.id },
+                                        key = { it.id },
+                                    ) { feature ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1134,7 +1146,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.related?.results ?: emptyList()) { related ->
+                    items(
+                                        (state.data.related?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { related ->
                         HomeItemArtist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1153,7 +1168,7 @@ private fun ArtistSections(
                                                 name = related.title,
                                             ),
                                         ),
-                                    description = related.subscribers,
+                                    description = related.subscribers?.toShortViewCount(),
                                     isExplicit = null,
                                     playlistId = null,
                                     browseId = related.browseId,
@@ -1172,39 +1187,45 @@ private fun ArtistSections(
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            Text(
-                text = stringResource(Res.string.description),
-                style = typo().labelMedium,
-                color = Color.White,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(vertical = 12.dp),
-            )
-        }
-        val urlHandler = LocalUriHandler.current
-        ElevatedCard(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            shape = SonoraShapes.Container,
-            colors =
-                CardDefaults.elevatedCardColors().copy(
-                    containerColor = descriptionTint.rgbFactor(0.5f),
-                ),
-        ) {
-            DescriptionView(
-                modifier = Modifier.padding(16.dp),
-                text = state.data.description ?: stringResource(Res.string.no_description),
-                limitLine = 5,
-                onTimeClicked = {},
-                onURLClicked = { url ->
-                    urlHandler.openUri(url)
-                },
-            )
+        // Nothing at all when there is nothing to describe. A heading over a card reading "No
+        // description" spends a section of the page reporting an absence, which is worse than the
+        // gap it fills.
+        val description = state.data.description?.takeIf { it.isNotBlank() }
+        if (description != null) {
+            Spacer(Modifier.height(10.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Text(
+                    text = stringResource(Res.string.description),
+                    style = typo().labelMedium,
+                    color = Color.White,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(vertical = 12.dp),
+                )
+            }
+            val urlHandler = LocalUriHandler.current
+            ElevatedCard(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = SonoraShapes.Container,
+                colors =
+                    CardDefaults.elevatedCardColors().copy(
+                        containerColor = descriptionTint.rgbFactor(0.5f),
+                    ),
+            ) {
+                DescriptionView(
+                    modifier = Modifier.padding(16.dp),
+                    text = description,
+                    limitLine = 5,
+                    onTimeClicked = {},
+                    onURLClicked = { url ->
+                        urlHandler.openUri(url)
+                    },
+                )
+            }
         }
         EndOfPage()
     }

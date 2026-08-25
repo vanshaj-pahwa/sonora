@@ -1,6 +1,7 @@
 package app.vanshajpahwa.sonora.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
+import app.vanshajpahwa.sonora.extension.toShortViewCount
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -821,7 +822,7 @@ fun HomeItemVideo(
                 text =
                     listOfNotNull(
                         data.artists.toListName().connectArtists().takeIf { it.isNotBlank() },
-                        data.views?.takeIf { it.isNotBlank() },
+                        data.views?.takeIf { it.isNotBlank() }?.toShortViewCount(),
                     ).joinToString(" • "),
                 style = typo().bodySmall,
                 minLines = 1,
@@ -995,7 +996,7 @@ fun ItemVideoChart(
                         text =
                             listOfNotNull(
                                 data.artists.toListName().connectArtists().takeIf { it.isNotBlank() },
-                                data.views.takeIf { it.isNotBlank() },
+                                data.views.takeIf { it.isNotBlank() }?.toShortViewCount(),
                             ).joinToString(" • "),
                         style = typo().bodyMedium,
                         minLines = 1,

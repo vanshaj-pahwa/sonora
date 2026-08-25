@@ -362,43 +362,6 @@ fun App(
                         exit = fadeOut(),
                     ) {
                         Column {
-                            AnimatedVisibility(
-                                isShowMiniPlayer && isLiquidGlassEnabled == DataStoreManager.FALSE,
-                                // Rises from below rather than sliding in from the side. The bar
-                                // lives at the bottom of the screen, so entering from off-screen
-                                // bottom is the motion its position implies; a horizontal slide
-                                // reads as the wrong object arriving. Exit mirrors it so the same
-                                // thing appears to leave the way it came.
-                                enter =
-                                    slideInVertically(
-                                        initialOffsetY = { it },
-                                        animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
-                                    ) + fadeIn(animationSpec = tween(220)),
-                                exit =
-                                    slideOutVertically(
-                                        targetOffsetY = { it },
-                                        animationSpec = tween(200),
-                                    ) + fadeOut(animationSpec = tween(160)),
-                            ) {
-                                MiniPlayer(
-                                    Modifier
-                                        .height(56.dp)
-                                        .fillMaxWidth()
-                                        .padding(
-                                            horizontal = 12.dp,
-                                        ).padding(
-                                            bottom = 4.dp,
-                                        ),
-                                    backdrop = backdrop,
-                                    onClick = {
-                                        isShowNowPlaylistScreen = true
-                                    },
-                                    onClose = {
-                                        viewModel.stopPlayer()
-                                        viewModel.isServiceRunning = false
-                                    },
-                                )
-                            }
                             if (isLiquidGlassEnabled == TRUE) {
                                 LiquidGlassAppBottomNavigationBar(
                                     navController = navController,
@@ -416,6 +379,29 @@ fun App(
                                     // Same signal the glass variant already receives, so both bars
                                     // collapse and expand on the same triggers.
                                     isScrolledToTop = isScrolledToTop,
+                                    // Handed to the bar so it can place the player relative to its
+                                    // own collapse state. The glass variant already owns both for
+                                    // the same reason.
+                                    miniPlayer =
+                                        if (isShowMiniPlayer) {
+                                            { widthModifier ->
+                                                MiniPlayer(
+                                                    widthModifier
+                                                        .height(56.dp)
+                                                        .padding(bottom = 4.dp),
+                                                    backdrop = backdrop,
+                                                    onClick = {
+                                                        isShowNowPlaylistScreen = true
+                                                    },
+                                                    onClose = {
+                                                        viewModel.stopPlayer()
+                                                        viewModel.isServiceRunning = false
+                                                    },
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        },
                                 ) { klass ->
                                     viewModel.reloadDestination(klass)
                                 }

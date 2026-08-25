@@ -85,7 +85,6 @@ import app.vanshajpahwa.sonora.resources.album_length
 import app.vanshajpahwa.sonora.resources.baseline_downloaded
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.downloading
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.other_version
 import app.vanshajpahwa.sonora.resources.year_and_category
 import app.vanshajpahwa.sonora.ui.component.CenterLoadingBox
@@ -714,7 +713,10 @@ fun AlbumScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(horizontal = 12.dp),
                                 ) {
-                                    items(uiState.otherVersion) { album ->
+                                    items(
+                                        uiState.otherVersion.distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { album ->
                                         HomeItemContentPlaylist(
                                             forceDark = true,
                                             onClick = {
