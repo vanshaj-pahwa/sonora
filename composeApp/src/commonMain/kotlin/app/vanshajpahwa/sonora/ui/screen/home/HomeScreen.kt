@@ -209,7 +209,7 @@ import app.vanshajpahwa.sonora.resources.good_evening
 import app.vanshajpahwa.sonora.resources.good_afternoon
 import app.vanshajpahwa.sonora.resources.good_morning
 import app.vanshajpahwa.sonora.resources.recently
-import app.vanshajpahwa.sonora.resources.recently_added
+import app.vanshajpahwa.sonora.resources.recently_played
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
 import app.vanshajpahwa.sonora.resources.discover
@@ -690,7 +690,7 @@ fun HomeScreen(
                                         }
                                         if (recent.isNotEmpty()) {
                                         HomePreviewTile(
-                                            label = stringResource(Res.string.recently_added),
+                                            label = stringResource(Res.string.recently_played),
                                             count = recent.size,
                                             icon = SonoraIcons.History,
                                             tint = MaterialTheme.colorScheme.secondary,

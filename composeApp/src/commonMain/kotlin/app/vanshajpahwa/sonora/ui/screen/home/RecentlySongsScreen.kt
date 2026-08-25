@@ -58,7 +58,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
 import app.vanshajpahwa.sonora.resources.error
-import app.vanshajpahwa.sonora.resources.recently_added
+import app.vanshajpahwa.sonora.resources.recently_played
 import app.vanshajpahwa.sonora.ui.component.NowPlayingBottomSheet
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -126,7 +126,7 @@ fun RecentlySongsScreen(
                 val item = recentlyItems[index]
                 when (item) {
                     is SongEntity -> {
-                        val recentlyAddedString = stringResource(Res.string.recently_added)
+                        val recentlyAddedString = stringResource(Res.string.recently_played)
                         SongFullWidthItems(
                             songEntity = item,
                             showDuration = true,
@@ -249,7 +249,7 @@ fun RecentlySongsScreen(
                     },
             title = {
                 Text(
-                    text = stringResource(Res.string.recently_added),
+                    text = stringResource(Res.string.recently_played),
                     style = typo().titleMedium,
                 )
             },

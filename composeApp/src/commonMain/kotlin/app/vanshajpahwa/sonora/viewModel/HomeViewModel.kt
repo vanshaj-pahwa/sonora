@@ -447,10 +447,9 @@ class HomeViewModel(
             }
         }
         viewModelScope.launch {
-            // Observed rather than the suspend getAllSongs, so the Recently count follows the library.
-            // Additions, not plays. The tile used to count songs with play time while the screen
-            // it opens lists everything added, so it read "2" over a list of ninety six.
-            songRepository.getAllSongsAsFlow(50).collectLatest { songs ->
+            // Plays, not stored rows. Opening an album writes all of its tracks to the song table,
+            // so counting rows here reported an album browsed once as songs recently listened to.
+            songRepository.getRecentSongsAsFlow(50).collectLatest { songs ->
                 _recent.value = songs
             }
         }

@@ -224,12 +224,7 @@ internal class MediaServiceHandlerImpl(
 
     private var watchTimeList: ArrayList<Float> = arrayListOf()
 
-    /**
-     * The track already counted for the play currently in progress, so it cannot be counted twice.
-     *
-     * The end of a queue can raise both a transition and STATE_ENDED for the same track. Cleared on
-     * every transition by [onMediaItemTransition].
-     */
+    /** Track already counted for the play in progress. Cleared on every transition. */
     private var countedPlayVideoId: String? = null
 
     private var volumeNormalizationJob: Job? = null
@@ -546,10 +541,8 @@ internal class MediaServiceHandlerImpl(
                                 Logger.w(TAG, "getDataOfNowPlayingState: Updated thumbs $it")
                             }
                         }
-                        // Deliberately does NOT record a play. Loading a track is not listening to
-                        // it, and this runs the instant a track becomes current. See
-                        // [mayBeRecordPlay], which counts on the way out once the listen threshold
-                        // has been passed.
+                        // Records no play: this runs the instant a track becomes current, which is
+                        // not listening to it. See [mayBeRecordPlay].
                         Logger.w(TAG, "getDataOfNowPlayingState: $songEntity")
                         Logger.w(TAG, "getDataOfNowPlayingState: $track")
                         _nowPlayingState.update {
@@ -2407,9 +2400,7 @@ internal class MediaServiceHandlerImpl(
 
             PlayerConstants.STATE_ENDED -> {
                 _simpleMediaState.value = SimpleMediaState.Ended
-                // The last track of a queue never produces a transition, so without this the one
-                // track most likely to have been played all the way through is the one track that
-                // never counts.
+                // The last track of a queue ends without a transition, so it would never count.
                 nowPlayingState.value.songEntity?.let { mayBeRecordPlay(it, current) }
                 Logger.d(TAG, "onPlaybackStateChanged: Ended")
             }
@@ -2435,6 +2426,10 @@ internal class MediaServiceHandlerImpl(
             nowPlayingState.value.songEntity?.let { updateDiscordRpc(it) }
         } else {
             stopProgressUpdate()
+            // Pausing is the third way a listen ends, alongside a transition and the end of a queue.
+            // Playing one song and stopping is an ordinary session, and without this it counted for
+            // nothing: the track never moved on, so nothing else here would ever record it.
+            nowPlayingState.value.songEntity?.let { mayBeRecordPlay(it, player.currentPosition) }
             mayBeSaveRecentSong()
             mayBeSavePlaybackState()
             if (discordRPC?.isRpcRunning() == true) {
@@ -2462,8 +2457,8 @@ internal class MediaServiceHandlerImpl(
         if (currentState is SimpleMediaState.Progress && lastPlayed != null) {
             mayBeRecordPlay(lastPlayed, currentState.progress)
         }
-        // Cleared after the outgoing track has had its chance to count, so the incoming one starts
-        // unclaimed. Repeat-one replays the same id and must be allowed to count again.
+        // Cleared after the outgoing track has had its chance, so the incoming one starts
+        // unclaimed and repeat-one can count the same id again.
         countedPlayVideoId = null
         Logger.w(TAG, "Smooth Switching Transition Current Position: ${player.currentPosition}")
         mayBeNormalizeVolume()
@@ -2509,36 +2504,22 @@ internal class MediaServiceHandlerImpl(
     /**
      * Records a finished listen, if it lasted long enough to count as one.
      *
-     * This is the single definition of "a play" in the app. Everything that ranks or dates a song
-     * comes from here: the listen counter behind Most played, the library timestamp behind Recently
-     * played, and the analytics event behind the listening report.
+     * The single definition of a play: the listen counter behind Most played, the library timestamp
+     * behind Recently played and the analytics event are written together here or not at all, so the
+     * screens built on them agree.
      *
-     * It runs on the way OUT of a track, never on the way in. The counters used to be written from
-     * [getDataOfNowPlayingState], which fires the moment a track becomes current, so skipping
-     * through a queue to find something wrote a full play and a fresh timestamp for every track it
-     * passed through. Most played became a record of what had been rejected, and Recently played
-     * filled with tracks that were heard for two seconds.
-     *
-     * Two separate counters also used to disagree. The listen count was written on load and the
-     * analytics event was written here behind a threshold, so one over-counted skips while the
-     * other under-counted, and the two screens could never be reconciled. They are now written
-     * together or not at all.
-     *
-     * Only the analytics event honours the local tracking setting. The listen count and the library
-     * timestamp are ordinary library state that Home and the Auto browse tree read, so turning
-     * tracking off makes the listening report stop recording without also emptying the library.
-     *
-     * A track with no known duration still counts, on elapsed time instead of a fraction. Duration
-     * arrives as 0 often enough that requiring it silently excluded those tracks from the listening
-     * report entirely, however long they played.
+     * Runs on the way out of a track, never on the way in, so skipping through a queue counts
+     * nothing. Only the analytics event honours the local tracking setting; the counter and the
+     * timestamp are ordinary library state that Home and the Auto browse tree read. A track with no
+     * known duration counts on elapsed time instead of a fraction, since duration is often 0.
      */
     private fun mayBeRecordPlay(
         song: SongEntity,
         listenedMillis: Long,
     ) {
-        // Checked and set before launching, not inside the coroutine. Both callers run on the
-        // player's callback thread, so a synchronous claim here is what stops the end of a queue
-        // being counted twice when a transition and STATE_ENDED both land on the same track.
+        // Claimed synchronously, before launching: both callers run on the player's callback
+        // thread, so this is what stops a track counting twice when a transition and STATE_ENDED
+        // land on the same one.
         if (countedPlayVideoId == song.videoId) return
         val durationMillis = song.durationSeconds * 1000L
         val qualified =
@@ -2568,8 +2549,7 @@ internal class MediaServiceHandlerImpl(
                     albumBrowseId = song.albumId,
                     durationSecond = song.durationSeconds.toLong(),
                     listenedSecond =
-                        // Anything past the near-complete mark is recorded as the whole track, so a
-                        // listen that ran to the end is not filed as a few seconds short of one.
+                        // Past the near-complete mark counts as the whole track.
                         if (durationMillis > 0 && listenedMillis * 100 >= durationMillis * NEAR_COMPLETE_PERCENT) {
                             song.durationSeconds.toLong()
                         } else {
