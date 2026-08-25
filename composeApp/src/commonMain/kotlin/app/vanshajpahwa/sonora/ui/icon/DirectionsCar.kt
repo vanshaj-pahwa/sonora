@@ -1,0 +1,96 @@
+package app.vanshajpahwa.sonora.ui.icon
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
+
+@Suppress("CheckReturnValue")
+val SonoraIcons.DirectionsCar: ImageVector
+  get() {
+    if (_DirectionsCar != null) {
+      return _DirectionsCar!!
+    }
+    _DirectionsCar =
+      ImageVector.Builder(
+          name = "DirectionsCar",
+          defaultWidth = 24.dp,
+          defaultHeight = 24.dp,
+          viewportWidth = 24f,
+          viewportHeight = 24f,
+        )
+        .apply {
+          path(
+            fill = SolidColor(Color.Black),
+            fillAlpha = 1f,
+            stroke = null,
+            strokeAlpha = 1f,
+            strokeLineWidth = 1f,
+            strokeLineCap = StrokeCap.Butt,
+            strokeLineJoin = StrokeJoin.Bevel,
+            strokeLineMiter = 1f,
+            pathFillType = PathFillType.Companion.NonZero,
+          ) {
+            moveTo(6f, 19f)
+            verticalLineToRelative(0.5f)
+            quadToRelative(0f, 0.63f, -0.44f, 1.06f)
+            reflectiveQuadTo(4.5f, 21f)
+            reflectiveQuadTo(3.44f, 20.56f)
+            reflectiveQuadTo(3f, 19.5f)
+            verticalLineTo(12.35f)
+            quadTo(3f, 12.18f, 3.03f, 12f)
+            reflectiveQuadTo(3.1f, 11.68f)
+            lineTo(4.98f, 6.35f)
+            quadTo(5.18f, 5.75f, 5.7f, 5.38f)
+            reflectiveQuadTo(6.88f, 5f)
+            horizontalLineTo(17.13f)
+            quadToRelative(0.65f, 0f, 1.18f, 0.38f)
+            reflectiveQuadToRelative(0.73f, 0.97f)
+            lineToRelative(1.88f, 5.33f)
+            quadToRelative(0.05f, 0.15f, 0.07f, 0.33f)
+            reflectiveQuadTo(21f, 12.35f)
+            verticalLineTo(19.5f)
+            quadToRelative(0f, 0.63f, -0.44f, 1.06f)
+            reflectiveQuadTo(19.5f, 21f)
+            reflectiveQuadTo(18.44f, 20.56f)
+            reflectiveQuadTo(18f, 19.5f)
+            verticalLineTo(19f)
+            horizontalLineTo(6f)
+            close()
+            moveTo(5.8f, 10f)
+            horizontalLineTo(18.2f)
+            lineTo(17.15f, 7f)
+            horizontalLineTo(6.85f)
+            lineTo(5.8f, 10f)
+            close()
+            moveToRelative(1.7f, 6f)
+            quadToRelative(0.63f, 0f, 1.06f, -0.44f)
+            reflectiveQuadTo(9f, 14.5f)
+            reflectiveQuadTo(8.56f, 13.44f)
+            reflectiveQuadTo(7.5f, 13f)
+            reflectiveQuadTo(6.44f, 13.44f)
+            reflectiveQuadTo(6f, 14.5f)
+            reflectiveQuadToRelative(0.44f, 1.06f)
+            reflectiveQuadTo(7.5f, 16f)
+            close()
+            moveToRelative(9f, 0f)
+            quadToRelative(0.63f, 0f, 1.06f, -0.44f)
+            reflectiveQuadTo(18f, 14.5f)
+            reflectiveQuadTo(17.56f, 13.44f)
+            reflectiveQuadTo(16.5f, 13f)
+            reflectiveQuadToRelative(-1.06f, 0.44f)
+            reflectiveQuadTo(15f, 14.5f)
+            reflectiveQuadToRelative(0.44f, 1.06f)
+            reflectiveQuadTo(16.5f, 16f)
+            close()
+          }
+        }
+        .build()
+    return _DirectionsCar!!
+  }
+
+private var _DirectionsCar: ImageVector? = null

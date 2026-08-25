@@ -159,6 +159,7 @@ import app.vanshajpahwa.sonora.ui.component.DescriptionView
 import app.vanshajpahwa.sonora.ui.component.ExplicitBadge
 import app.vanshajpahwa.sonora.ui.component.FullscreenLyricsSheet
 import app.vanshajpahwa.sonora.ui.component.HeartCheckBox
+import app.vanshajpahwa.sonora.ui.component.OutputDeviceButton
 import app.vanshajpahwa.sonora.ui.component.InfoPlayerBottomSheet
 import app.vanshajpahwa.sonora.ui.component.LiquidGlassIconButton
 import app.vanshajpahwa.sonora.ui.component.LyricsView
@@ -1807,6 +1808,8 @@ fun NowPlayingScreenContent(
                                         HeartCheckBox(checked = controllerState.isLiked, size = 32) {
                                             sharedViewModel.onUIEvent(UIEvent.ToggleLike)
                                         }
+                                        Spacer(modifier = Modifier.size(8.dp))
+                                        OutputDeviceButton(size = 24, box = 32)
                                     }
                                     if (getPlatform() == Platform.Android) {
                                         Spacer(modifier = Modifier.height(if (useGlass) 20.dp else 14.dp))
