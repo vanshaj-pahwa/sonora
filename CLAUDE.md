@@ -36,6 +36,13 @@ stop, imperative mood, 72 characters or fewer. Types in use here:
 
 Add a scope when it narrows things usefully: `fix(auto):`, `perf(player):`.
 
+**Name the change plainly. No figures of speech.** The subject says what was added, fixed or
+changed, in the most ordinary words available. "add output device indicator" not "show where the
+audio is going"; "improve mini player readability" not "calm the mini player down"; "reduce bleed
+through the translucent bar" not "quiet the bar". Someone scanning `git log` is looking for the
+change, not for a turn of phrase, and a subject that has to be decoded is a subject that gets
+skipped. Start with a verb, name the thing, and stop.
+
 **Body: as long as the change, and no longer.** A one line subject is the whole commit for a one
 line fix, and padding it out with bullets invents significance the change does not have. Add a body
 when there is something a reader could not get from the diff: why it was wrong, what else it
