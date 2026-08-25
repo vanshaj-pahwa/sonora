@@ -75,6 +75,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -519,23 +520,36 @@ fun HomeScreen(
                         // first frame and keeps working with no network.
                         item(key = "home_local") {
                             Box {
+                                // A Box takes the height of its tallest child, so the fixed 300dp
+                                // wash below would floor the whole section and leave empty space
+                                // under it whenever the shelves are short, as they are before
+                                // anything has been played. matchParentSize follows the Column
+                                // instead of sizing it, and clipToBounds trims the wash when the
+                                // Column is shorter.
                                 Box(
                                     modifier =
                                         Modifier
-                                            .fillMaxWidth()
-                                            .height(300.dp)
-                                            .then(
-                                                if (useGlass) Modifier.layerBackdrop(homeBackdrop) else Modifier,
-                                            ).angledGradientBackground(listOf(animatedColor, backgroundColor), 25f),
+                                            .matchParentSize()
+                                            .clipToBounds(),
                                 ) {
                                     Box(
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .height(180.dp)
-                                                .align(Alignment.BottomCenter)
-                                                .background(artworkScrimBrush(backgroundColor)),
-                                    )
+                                                .height(300.dp)
+                                                .then(
+                                                    if (useGlass) Modifier.layerBackdrop(homeBackdrop) else Modifier,
+                                                ).angledGradientBackground(listOf(animatedColor, backgroundColor), 25f),
+                                    ) {
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .height(180.dp)
+                                                    .align(Alignment.BottomCenter)
+                                                    .background(artworkScrimBrush(backgroundColor)),
+                                        )
+                                    }
                                 }
                                 Column {
                                     Spacer(
