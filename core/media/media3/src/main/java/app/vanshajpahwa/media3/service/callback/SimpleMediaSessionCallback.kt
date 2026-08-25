@@ -336,8 +336,11 @@ internal class SimpleMediaSessionCallback(
                     SONG -> {
                         songRepository
                             .getAllSongs(1000)
+                            // Descending, matching the order getAllSongs already applies. Ascending
+                            // would lead with never played songs, which keep a placeholder timestamp
+                            // far in the past.
                             .last()
-                            .sortedBy { it.inLibrary }
+                            .sortedByDescending { it.inLibrary }
                             .map { it.toMediaItem(parentId) }
                     }
 

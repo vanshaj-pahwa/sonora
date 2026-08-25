@@ -121,6 +121,9 @@ internal class SongRepositoryImpl(
     override suspend fun insertSongs(songs: List<SongEntity>) =
         withContext(Dispatchers.IO) { localDataSource.insertSongs(songs) }
 
+    override fun getAllSongsAsFlow(limit: Int): Flow<List<SongEntity>> =
+        localDataSource.getAllSongsAsFlow(limit).flowOn(Dispatchers.IO)
+
     override fun searchLocalSongs(
         query: String,
         limit: Int,

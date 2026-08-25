@@ -75,6 +75,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -208,6 +209,7 @@ import app.vanshajpahwa.sonora.resources.good_evening
 import app.vanshajpahwa.sonora.resources.good_afternoon
 import app.vanshajpahwa.sonora.resources.good_morning
 import app.vanshajpahwa.sonora.resources.recently
+import app.vanshajpahwa.sonora.resources.recently_played
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
 import app.vanshajpahwa.sonora.resources.discover
@@ -518,23 +520,36 @@ fun HomeScreen(
                         // first frame and keeps working with no network.
                         item(key = "home_local") {
                             Box {
+                                // A Box takes the height of its tallest child, so the fixed 300dp
+                                // wash below would floor the whole section and leave empty space
+                                // under it whenever the shelves are short, as they are before
+                                // anything has been played. matchParentSize follows the Column
+                                // instead of sizing it, and clipToBounds trims the wash when the
+                                // Column is shorter.
                                 Box(
                                     modifier =
                                         Modifier
-                                            .fillMaxWidth()
-                                            .height(300.dp)
-                                            .then(
-                                                if (useGlass) Modifier.layerBackdrop(homeBackdrop) else Modifier,
-                                            ).angledGradientBackground(listOf(animatedColor, backgroundColor), 25f),
+                                            .matchParentSize()
+                                            .clipToBounds(),
                                 ) {
                                     Box(
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .height(180.dp)
-                                                .align(Alignment.BottomCenter)
-                                                .background(artworkScrimBrush(backgroundColor)),
-                                    )
+                                                .height(300.dp)
+                                                .then(
+                                                    if (useGlass) Modifier.layerBackdrop(homeBackdrop) else Modifier,
+                                                ).angledGradientBackground(listOf(animatedColor, backgroundColor), 25f),
+                                    ) {
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .height(180.dp)
+                                                    .align(Alignment.BottomCenter)
+                                                    .background(artworkScrimBrush(backgroundColor)),
+                                        )
+                                    }
                                 }
                                 Column {
                                     Spacer(
@@ -597,7 +612,11 @@ fun HomeScreen(
                                             },
                                         )
                                         Spacer(Modifier.height(12.dp))
-                                        HomeTripletRow(items = rotation) { song ->
+                                        // Chunked rather than one long row: the row is a three
+                                        // across grid, so more songs means more rows and every card
+                                        // keeps the size it has in every other section.
+                                        rotation.chunked(3).forEach { rowItems ->
+                                        HomeTripletRow(items = rowItems) { song ->
                                             HomeTrackCard(
                                                 title = song.title,
                                                 subtitle = song.artistName?.joinToString().orEmpty(),
@@ -608,7 +627,9 @@ fun HomeScreen(
                                                 },
                                             )
                                         }
-                                        Spacer(Modifier.height(26.dp))
+                                            Spacer(Modifier.height(12.dp))
+                                        }
+                                        Spacer(Modifier.height(14.dp))
                                     }
                                     if (topArtists.isNotEmpty()) {
                                         HomeSectionHeader(title = stringResource(Res.string.your_top_artists))
@@ -642,12 +663,18 @@ fun HomeScreen(
                                     // Two wide cards where three squares were. Favourites moved to
                                     // the header, and these two now preview their top track, which a
                                     // third-of-a-row square could never fit legibly.
+                                    // An empty tile is an empty promise. Downloaded reading zero
+                                    // took half the row to say there was nothing there, so a tile
+                                    // now appears only when it has something, the survivor takes the
+                                    // full width, and with neither the row does not draw at all.
+                                    if (downloaded.isNotEmpty() || recent.isNotEmpty()) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     ) {
                                         val topDownload = downloaded.firstOrNull()
                                         val topRecent = recent.firstOrNull()
+                                        if (downloaded.isNotEmpty()) {
                                         HomePreviewTile(
                                             label = stringResource(Res.string.downloaded),
                                             count = downloaded.size,
@@ -666,8 +693,10 @@ fun HomeScreen(
                                                 )
                                             },
                                         )
+                                        }
+                                        if (recent.isNotEmpty()) {
                                         HomePreviewTile(
-                                            label = stringResource(Res.string.recently),
+                                            label = stringResource(Res.string.recently_played),
                                             count = recent.size,
                                             icon = SonoraIcons.History,
                                             tint = MaterialTheme.colorScheme.secondary,
@@ -678,6 +707,8 @@ fun HomeScreen(
                                             modifier = Modifier.weight(1f),
                                             onClick = { navController.navigate(RecentlySongsDestination) },
                                         )
+                                        }
+                                    }
                                     }
                                 }
                             }
@@ -699,6 +730,7 @@ fun HomeScreen(
                                         Column {
                                             HomeSectionHeader(
                                                 title = stringResource(Res.string.more_like, shelf.seedName),
+                                                underline = shelf.seedName,
                                                 actionLabel = stringResource(Res.string.see_all),
                                                 onAction = {
                                                     navController.navigate(

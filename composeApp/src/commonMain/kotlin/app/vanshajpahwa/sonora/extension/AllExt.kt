@@ -260,3 +260,41 @@ fun SponsorBlockType.displayString(): String =
         SponsorBlockType.SELF_PROMOTION -> stringResource(Res.string.self_promotion)
         SponsorBlockType.SPONSOR -> stringResource(Res.string.sponsor)
     }
+/**
+ * Compacts a count for display: "1,234,567 views" reads as "1.2M views", 4123 as "4.1K".
+ *
+ * A label after the number is kept. Anything already shortened is returned untouched, recognised by
+ * a unit letter sitting directly against the digits as in "3.9M subscribers": those arrive that way
+ * from YouTube, localised, and rebuilding them would replace the user's language with English.
+ */
+fun String.toShortViewCount(): String {
+    val trimmed = trim()
+    if (trimmed.isEmpty()) return this
+    val end = trimmed.indexOfFirst { !it.isDigit() && it != ',' && it != '.' && it != ' ' }
+    val head = if (end == -1) trimmed else trimmed.substring(0, end)
+    val tail = if (end == -1) "" else trimmed.substring(end).trim()
+    // A letter touching the digits means it is already a unit, not a label.
+    if (end != -1 && !head.endsWith(" ")) return this
+    val value = head.filter { it.isDigit() }.toLongOrNull() ?: return this
+    if (value < 1_000L) return this
+    val short =
+        when {
+            value >= 1_000_000_000L -> value.compactTo(1_000_000_000L, "B")
+            value >= 1_000_000L -> value.compactTo(1_000_000L, "M")
+            else -> value.compactTo(1_000L, "K")
+        }
+    return if (tail.isEmpty()) short else "$short $tail"
+}
+
+/**
+ * One decimal place below ten, none above, so 9.9M keeps its precision and 152M does not carry a
+ * digit nobody reads.
+ */
+private fun Long.compactTo(
+    unit: Long,
+    suffix: String,
+): String {
+    val whole = this / unit
+    val tenth = (this % unit) * 10 / unit
+    return if (whole < 10 && tenth > 0) "$whole.$tenth$suffix" else "$whole$suffix"
+}

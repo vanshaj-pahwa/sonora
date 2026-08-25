@@ -58,7 +58,12 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
 import app.vanshajpahwa.sonora.resources.error
-import app.vanshajpahwa.sonora.resources.recently_added
+import app.vanshajpahwa.sonora.resources.recently_played
+import app.vanshajpahwa.sonora.ui.component.NowPlayingBottomSheet
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -72,6 +77,10 @@ fun RecentlySongsScreen(
 
     val recentlyItems = viewModel.recentlySongs.collectAsLazyPagingItems()
     val playingTrack by sharedViewModel.nowPlayingState.map { it?.songEntity }.collectAsState(initial = null)
+    // The rows had no kebab because this screen had no sheet to open. Recently added is a list of
+    // songs like any other, so it gets the same actions the album and playlist lists have.
+    var showBottomSheet by rememberSaveable { mutableStateOf(false) }
+    var chosenSong: SongEntity? by remember { mutableStateOf(null) }
     val isPlaying by sharedViewModel.controllerState.map { it.isPlaying }.collectAsState(initial = false)
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -117,9 +126,14 @@ fun RecentlySongsScreen(
                 val item = recentlyItems[index]
                 when (item) {
                     is SongEntity -> {
-                        val recentlyAddedString = stringResource(Res.string.recently_added)
+                        val recentlyAddedString = stringResource(Res.string.recently_played)
                         SongFullWidthItems(
                             songEntity = item,
+                            showDuration = true,
+                            onMoreClickListener = {
+                                chosenSong = item
+                                showBottomSheet = true
+                            },
                             isPlaying = playingTrack?.videoId == item.videoId && isPlaying,
                             onClickListener = { videoId ->
                                 val firstQueue = item.toTrack()
@@ -235,7 +249,7 @@ fun RecentlySongsScreen(
                     },
             title = {
                 Text(
-                    text = stringResource(Res.string.recently_added),
+                    text = stringResource(Res.string.recently_played),
                     style = typo().titleMedium,
                 )
             },
@@ -256,6 +270,14 @@ fun RecentlySongsScreen(
                 TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                 ),
+        )
+    }
+
+    if (showBottomSheet) {
+        NowPlayingBottomSheet(
+            onDismiss = { showBottomSheet = false },
+            navController = navController,
+            song = chosenSong,
         )
     }
 }

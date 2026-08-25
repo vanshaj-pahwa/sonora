@@ -75,6 +75,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -146,6 +147,23 @@ import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "MiniPlayer"
+
+/**
+ * One width for every control in the mini player row, and one gap between them.
+ *
+ * The row is a rhythm, not four separate buttons, so the thing that has to be constant is the step
+ * from one centre to the next. That is box plus gap, which only stays even if the box does.
+ */
+private val MINI_CONTROL_BOX = 40.dp
+private val MINI_CONTROL_GAP = 8.dp
+
+/**
+ * How much of the artwork colour reaches the bar.
+ *
+ * Enough to tell one track from another at a glance, not enough to become the brightest surface on
+ * the screen or to make white text work for its legibility.
+ */
+private const val MINI_TINT_STRENGTH = 0.20f
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -311,14 +329,23 @@ fun MiniPlayer(
         job4.join()
     }
 
+    // A tint of the artwork over the app's own surface, not the artwork colour itself.
+    //
+    // The raw palette colour filled the bar edge to edge at full strength, so a bright cover turned
+    // the one component that is always on screen into the loudest thing on it, and white text had to
+    // fight the fill it sat on. Mixed down, the bar still takes character from what is playing and
+    // stays a surface rather than becoming a banner.
+    val tintedSurface =
+        lerp(MaterialTheme.colorScheme.surfaceContainer, background.value, MINI_TINT_STRENGTH)
+
     // Liquid glass owns the surface entirely when it is on, so it wins outright. Otherwise the
-    // translucent setting thins the palette colour enough to see content through it, at the same
-    // 0.82 the nav bar uses so the two read as one decision rather than two arbitrary numbers.
+    // translucent setting thins it enough to see content through, at the same 0.82 the nav bar uses
+    // so the two read as one decision rather than two arbitrary numbers.
     val containerColor =
         when {
             isLiquidGlassEnabled == DataStoreManager.TRUE -> Color.Transparent
-            isTranslucentMiniPlayer == DataStoreManager.TRUE -> background.value.copy(alpha = 0.82f)
-            else -> background.value
+            isTranslucentMiniPlayer == DataStoreManager.TRUE -> tintedSurface.copy(alpha = 0.82f)
+            else -> tintedSurface
         }
 
     if (getPlatform() == Platform.Android) {
@@ -475,32 +502,13 @@ fun MiniPlayer(
                                 modifier = Modifier.weight(1F).fillMaxHeight(),
                                 contentAlignment = Alignment.CenterStart,
                                 transitionSpec = {
-                                    // Compare the incoming number with the previous number.
-                                    if (targetState != initialState) {
-                                        // If the target number is larger, it slides up and fades in
-                                        // while the initial (smaller) number slides up and fades out.
-                                        (
-                                            slideInHorizontally { width ->
-                                                width
-                                            } + fadeIn()
-                                        ).togetherWith(
-                                            slideOutHorizontally { width -> +width } + fadeOut(),
-                                        )
-                                    } else {
-                                        // If the target number is smaller, it slides down and fades in
-                                        // while the initial number slides down and fades out.
-                                        (
-                                            slideInHorizontally { width ->
-                                                +width
-                                            } + fadeIn()
-                                        ).togetherWith(
-                                            slideOutHorizontally { width -> width } + fadeOut(),
-                                        )
-                                    }.using(
-                                        // Disable clipping since the faded slide-in/out should
-                                        // be displayed out of bounds.
-                                        SizeTransform(clip = false),
-                                    )
+                                    // A cross fade in place. The slide this replaces was drawn
+                                    // deliberately out of bounds, so mid change the outgoing title
+                                    // and the incoming one were both visible across the bar and read
+                                    // as one garbled line rather than as a track change.
+                                    fadeIn(tween(200))
+                                        .togetherWith(fadeOut(tween(140)))
+                                        .using(SizeTransform(clip = true))
                                 },
                             ) { target ->
                                 if (target != null) {
@@ -514,15 +522,17 @@ fun MiniPlayer(
                                             style = typo().labelSmall,
                                             color = textColor,
                                             maxLines = 1,
+                                            // Ellipsis rather than the marquee used elsewhere. This
+                                            // bar is on screen the whole time, and text that never
+                                            // stops moving in the corner of every other screen is
+                                            // motion nobody asked for.
+                                            overflow = TextOverflow.Ellipsis,
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()
                                                     .wrapContentHeight(
                                                         align = Alignment.CenterVertically,
-                                                    ).titleMarquee(
-                                                        iterations = Int.MAX_VALUE,
-                                                        animationMode = MarqueeAnimationMode.Immediately,
-                                                    ).focusable(),
+                                                    ),
                                         )
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             androidx.compose.animation.AnimatedVisibility(visible = songEntity?.isExplicit == true) {
@@ -538,16 +548,14 @@ fun MiniPlayer(
                                                 text = (songEntity?.artistName?.connectArtists() ?: ""),
                                                 style = typo().bodySmall,
                                                 maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
                                                 color = textColor,
                                                 modifier =
                                                     Modifier
                                                         .weight(1f)
                                                         .wrapContentHeight(
                                                             align = Alignment.CenterVertically,
-                                                        ).titleMarquee(
-                                                            iterations = Int.MAX_VALUE,
-                                                            animationMode = MarqueeAnimationMode.Immediately,
-                                                        ).focusable(),
+                                                        ),
                                             )
                                         }
                                     }
@@ -557,18 +565,30 @@ fun MiniPlayer(
                     }
                     // Even 8dp between every control, 12dp to separate the cluster from the title.
                     //
-                    // These were 15, 15, 8, 15: not a rhythm, and 15 is not on the 4dp spacing scale
-                    // the rest of the app uses. The uneven gaps read as the buttons drifting apart,
-                    // and the cluster was 171dp wide, which is width taken straight from the title
-                    // column beside it and why long titles were cut off on the search page.
-                    Spacer(modifier = Modifier.width(12.dp))
-                    HeartCheckBox(checked = liked, size = 30, tint = textColor) {
-                        sharedViewModel.onUIEvent(UIEvent.ToggleLike)
+                    // Tight on purpose. Each button already carries its own padding inside a 40dp or
+                    // 48dp target, so the gaps between them are visual space on top of space that is
+                    // already there. Every dp here comes out of the title column, which is the part
+                    // that has to shrink first when the bar is narrow, and narrow is now the normal
+                    // case: collapsed, this sits beside the nav button rather than across the screen.
+                    // Every control in the same width box, with the same gap either side.
+                    //
+                    // Equal spacers are not equal gaps: these were 30, 30, 48 and 40dp wide, so the
+                    // same 2dp between each produced centre to centre steps that grew along the row
+                    // and read as drifting apart. Boxing them all to one width is what actually
+                    // evens it out; the icons inside stay their own sizes, so play still leads.
+                    Spacer(modifier = Modifier.width(MINI_CONTROL_GAP))
+                    Box(
+                        modifier = Modifier.size(MINI_CONTROL_BOX),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        HeartCheckBox(checked = liked, size = 28, tint = textColor) {
+                            sharedViewModel.onUIEvent(UIEvent.ToggleLike)
+                        }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(MINI_CONTROL_GAP))
                     Crossfade(targetState = loading, label = "") {
                         if (it) {
-                            Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(MINI_CONTROL_BOX), contentAlignment = Alignment.Center) {
                                 SonoraSpinner(
                                     size = 18.dp,
                                     strokeWidth = 3.dp,
@@ -576,18 +596,21 @@ fun MiniPlayer(
                                 )
                             }
                         } else {
-                            PlayPauseButton(isPlaying = isPlaying, modifier = Modifier.size(48.dp), tint = textColor) {
+                            PlayPauseButton(
+                                isPlaying = isPlaying,
+                                modifier = Modifier.size(MINI_CONTROL_BOX),
+                                tint = textColor,
+                            ) {
                                 sharedViewModel.onUIEvent(UIEvent.PlayPause)
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Skip is the other control worth having without opening Now Playing. The title
-                    // column is weight(1f) and already marquees, so it gives up the width for this.
+                    Spacer(modifier = Modifier.width(MINI_CONTROL_GAP))
+                    // Skip is the other control worth having without opening Now Playing.
                     Box(
                         modifier =
                             Modifier
-                                .size(40.dp)
+                                .size(MINI_CONTROL_BOX)
                                 .clip(CircleShape)
                                 .clickable {
                                     if (controllerState.isNextAvailable) {
@@ -604,7 +627,7 @@ fun MiniPlayer(
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(MINI_CONTROL_GAP))
                 }
                 // Liquid glass keeps the line, because the container fill has nothing to fill: the
                 // surface is transparent by design in that mode, so tinting a fraction of it would

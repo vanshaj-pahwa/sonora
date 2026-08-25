@@ -31,6 +31,15 @@ internal class ArtistRepositoryImpl(
             emit(localDataSource.getArtist(id))
         }.flowOn(Dispatchers.IO)
 
+    override fun getArtistByIdOrName(
+        id: String?,
+        name: String?,
+    ): Flow<ArtistEntity?> =
+        flow {
+            val byId = id?.takeIf { it.isNotBlank() }?.let { localDataSource.getArtist(it) }
+            emit(byId ?: name?.takeIf { it.isNotBlank() }?.let { localDataSource.getArtistByName(it) })
+        }.flowOn(Dispatchers.IO)
+
     override suspend fun insertArtist(artistEntity: ArtistEntity) =
         withContext(Dispatchers.IO) {
             localDataSource.insertArtist(artistEntity)

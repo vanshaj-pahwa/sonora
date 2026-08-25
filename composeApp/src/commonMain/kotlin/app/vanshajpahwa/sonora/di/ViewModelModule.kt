@@ -20,6 +20,7 @@ import app.vanshajpahwa.sonora.viewModel.NowPlayingBottomSheetViewModel
 import app.vanshajpahwa.sonora.viewModel.PlaylistViewModel
 import app.vanshajpahwa.sonora.viewModel.PodcastViewModel
 import app.vanshajpahwa.sonora.viewModel.RecentlySongsViewModel
+import app.vanshajpahwa.sonora.viewModel.DurationBackfill
 import app.vanshajpahwa.sonora.viewModel.RemoteFeedHealth
 import app.vanshajpahwa.sonora.viewModel.SearchViewModel
 import app.vanshajpahwa.sonora.viewModel.SettingsViewModel
@@ -62,6 +63,7 @@ val viewModelModule =
         }
         single { MoodArtworkStore(get()) }
         single { RemoteFeedHealth() }
+        single { DurationBackfill(get(), get()) }
         viewModel {
             LibraryViewModel(
                 get(),
@@ -87,6 +89,7 @@ val viewModelModule =
         }
         viewModel {
             AlbumViewModel(
+                get(),
                 get(),
                 get(),
             )
@@ -135,6 +138,7 @@ val viewModelModule =
         }
         viewModel {
             PlaylistViewModel(
+                get(),
                 get(),
                 get(),
                 get(),

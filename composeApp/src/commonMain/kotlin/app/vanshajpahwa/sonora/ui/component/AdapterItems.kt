@@ -1,6 +1,7 @@
 package app.vanshajpahwa.sonora.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
+import app.vanshajpahwa.sonora.extension.toShortViewCount
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -821,7 +822,7 @@ fun HomeItemVideo(
                 text =
                     listOfNotNull(
                         data.artists.toListName().connectArtists().takeIf { it.isNotBlank() },
-                        data.views?.takeIf { it.isNotBlank() },
+                        data.views?.takeIf { it.isNotBlank() }?.toShortViewCount(),
                     ).joinToString(" • "),
                 style = typo().bodySmall,
                 minLines = 1,
@@ -995,7 +996,7 @@ fun ItemVideoChart(
                         text =
                             listOfNotNull(
                                 data.artists.toListName().connectArtists().takeIf { it.isNotBlank() },
-                                data.views.takeIf { it.isNotBlank() },
+                                data.views.takeIf { it.isNotBlank() }?.toShortViewCount(),
                             ).joinToString(" • "),
                         style = typo().bodyMedium,
                         minLines = 1,
@@ -1307,18 +1308,25 @@ fun MoodAndGenresContentItem(
                         // straight back to the genre, which is what tapping any album under a
                         // genre used to do.
                         //
-                        // VL marks a playlist here, the same prefix verifyYouTubePlaylistId adds
-                        // and the repositories test for. Anything that is not a playlist, artist
-                        // or podcast is an album, which is the default the home shelves already
-                        // take.
-                        val browseId =
-                            if (item is app.vanshajpahwa.domain.data.model.mood.genre.Content) {
-                                item.playlistBrowseId
-                            } else {
-                                (item as app.vanshajpahwa.domain.data.model.mood.moodmoments.Content).playlistBrowseId
-                            }
+                        // The response already says what each card is, in
+                        // browseEndpointContextMusicConfig.pageType, so that is what decides. The
+                        // parser used to discard it, which left prefix sniffing as the only option
+                        // and no way to be sure an album id had been spotted.
+                        val genreItem = item as? app.vanshajpahwa.domain.data.model.mood.genre.Content
+                        val momentItem = item as? app.vanshajpahwa.domain.data.model.mood.moodmoments.Content
+                        val browseId = genreItem?.playlistBrowseId ?: momentItem?.playlistBrowseId.orEmpty()
+                        val pageType = genreItem?.pageType ?: momentItem?.pageType
                         navController.navigate(
                             when {
+                                // What YouTube said it is, when it said anything.
+                                pageType == "MUSIC_PAGE_TYPE_ALBUM" ||
+                                    pageType == "MUSIC_PAGE_TYPE_AUDIOBOOK" -> AlbumDestination(browseId = browseId)
+                                pageType == "MUSIC_PAGE_TYPE_PLAYLIST" -> PlaylistDestination(playlistId = browseId)
+                                pageType == "MUSIC_PAGE_TYPE_ARTIST" ||
+                                    pageType == "MUSIC_PAGE_TYPE_USER_CHANNEL" -> ArtistDestination(channelId = browseId)
+                                pageType == "MUSIC_PAGE_TYPE_PODCAST" -> PodcastDestination(podcastId = browseId)
+                                // Only reached when the response omitted the type. Prefixes are a
+                                // guess, which is why they are the fallback and not the rule.
                                 browseId.startsWith("VL") -> PlaylistDestination(playlistId = browseId)
                                 browseId.startsWith("UC") -> ArtistDestination(channelId = browseId)
                                 browseId.startsWith("MPSP") -> PodcastDestination(podcastId = browseId)

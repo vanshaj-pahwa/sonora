@@ -137,7 +137,11 @@ internal class DataStoreManagerImpl(
 
     override val quality: Flow<String> =
         settingsDataStore.data.map { preferences ->
-            preferences[QUALITY] ?: COMMON_QUALITY.items[0].toString()
+            // Medium, not the first entry, which is 66kbps. Most people never open this screen, so
+            // the default is the quality the app actually ships at. The top tier is deliberately not
+            // the default: it needs YouTube Premium, and without it the format lookup falls through
+            // to another Premium only itag and can end up with no audio stream at all.
+            preferences[QUALITY] ?: COMMON_QUALITY.items[1].toString()
         }
 
     override suspend fun setQuality(quality: String) {
@@ -150,7 +154,9 @@ internal class DataStoreManagerImpl(
 
     override val downloadQuality: Flow<String> =
         settingsDataStore.data.map { preferences ->
-            preferences[DOWNLOAD_QUALITY] ?: COMMON_QUALITY.items[0].toString()
+            // Matches the playback default. A download is kept, so shipping the lowest tier meant
+            // storing the worst copy of a song permanently.
+            preferences[DOWNLOAD_QUALITY] ?: COMMON_QUALITY.items[1].toString()
         }
 
     override suspend fun setDownloadQuality(quality: String) {
@@ -163,7 +169,7 @@ internal class DataStoreManagerImpl(
 
     override val videoDownloadQuality: Flow<String> =
         settingsDataStore.data.map { preferences ->
-            preferences[VIDEO_DOWNLOAD_QUALITY] ?: "720p"
+            preferences[VIDEO_DOWNLOAD_QUALITY] ?: "1080p"
         }
 
     override suspend fun setVideoDownloadQuality(quality: String) {
@@ -545,7 +551,8 @@ internal class DataStoreManagerImpl(
 
     override val videoQuality =
         settingsDataStore.data.map { preferences ->
-            preferences[VIDEO_QUALITY] ?: "720p"
+            // 1080p, with the existing lookup falling back to 720p then 360p when it is missing.
+            preferences[VIDEO_QUALITY] ?: "1080p"
         }
 
     override suspend fun setVideoQuality(quality: String) {
@@ -985,7 +992,11 @@ internal class DataStoreManagerImpl(
 
     override val endlessQueue =
         settingsDataStore.data.map { preferences ->
-            preferences[ENDLESS_QUEUE] ?: FALSE
+            // On by default. When a queue runs out this starts a radio from the last track played
+            // and keeps pulling related songs, so music continues instead of stopping dead at the
+            // end of an album. Off, the app goes silent and asks the listener to decide what next,
+            // which is the moment most sessions end.
+            preferences[ENDLESS_QUEUE] ?: TRUE
         }
 
     override suspend fun setEndlessQueue(endlessQueue: Boolean) {

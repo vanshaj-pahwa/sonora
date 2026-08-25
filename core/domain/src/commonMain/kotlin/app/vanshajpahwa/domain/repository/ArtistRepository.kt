@@ -11,6 +11,9 @@ interface ArtistRepository {
 
     fun getArtistById(id: String): Flow<ArtistEntity?>
 
+    /** By id, falling back to the display name when no row carries that id. */
+    fun getArtistByIdOrName(id: String?, name: String?): Flow<ArtistEntity?>
+
     suspend fun insertArtist(artistEntity: ArtistEntity)
 
     suspend fun updateArtistImage(

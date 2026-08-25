@@ -98,11 +98,14 @@ import app.vanshajpahwa.sonora.extension.getColorFromPalette
 import app.vanshajpahwa.sonora.extension.getScreenSizeInfo
 import app.vanshajpahwa.sonora.extension.getStringBlocking
 import app.vanshajpahwa.sonora.extension.rgbFactor
+import app.vanshajpahwa.sonora.extension.toShortViewCount
 import app.vanshajpahwa.sonora.extension.toImmersiveBackground
 import app.vanshajpahwa.sonora.extension.toSquareThumbnailUrl
 import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.ui.component.CenterLoadingBox
 import app.vanshajpahwa.sonora.ui.component.CollapsingToolbarParallaxEffect
+import app.vanshajpahwa.sonora.ui.component.DetailCircleButton
+import app.vanshajpahwa.sonora.ui.component.DetailActionRow
 import app.vanshajpahwa.sonora.ui.component.rememberHolderPainter
 import app.vanshajpahwa.sonora.ui.component.DescriptionView
 import app.vanshajpahwa.sonora.ui.component.EndOfPage
@@ -146,7 +149,6 @@ import app.vanshajpahwa.sonora.resources.error
 import app.vanshajpahwa.sonora.resources.featured_inArtist
 import app.vanshajpahwa.sonora.resources.follow
 import app.vanshajpahwa.sonora.resources.followed
-import app.vanshajpahwa.sonora.resources.no_description
 import app.vanshajpahwa.sonora.resources.popular
 import app.vanshajpahwa.sonora.resources.see_all
 import app.vanshajpahwa.sonora.resources.related_artists
@@ -385,8 +387,8 @@ fun ArtistScreen(
                                                 }
                                                 val meta =
                                                     listOfNotNull(
-                                                        state.data.subscribers?.takeIf { it.isNotBlank() },
-                                                        state.data.playCount?.takeIf { it.isNotBlank() },
+                                                        state.data.subscribers?.takeIf { it.isNotBlank() }?.toShortViewCount(),
+                                                        state.data.playCount?.takeIf { it.isNotBlank() }?.toShortViewCount(),
                                                     ).joinToString(" · ")
                                                 if (meta.isNotBlank()) {
                                                     Spacer(modifier = Modifier.height(4.dp))
@@ -433,92 +435,39 @@ fun ArtistScreen(
 
                                     // Apple Music-style action row: [Radio][Shuffle pill][Follow] centered.
                                     // In Sonora "play" an artist == shuffle, so the big middle button is Shuffle.
-                                    Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 32.dp)
-                                                .padding(vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        // Radio — side button: outlined accent (yellow) circle with an
-                                        // accent-tinted icon over a transparent fill, matching the reference.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .clip(CircleShape)
-                                                    .border(1.5.dp, artistAccent, CircleShape)
-                                                    .clickable {
-                                                        val param = state.data.radioParam
-                                                        if (param != null) {
-                                                            viewModel.onRadioClick(param)
-                                                        } else {
-                                                            viewModel.makeToast(runBlocking { getString(Res.string.error) })
-                                                        }
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = SonoraIcons.Sensors,
+                                    // Same cluster as album and playlist: a primary pill flanked by
+                                    // circular secondaries. Playing an artist means shuffling them,
+                                    // so Shuffle is the pill here rather than Play. Follow keeps its
+                                    // filled state, which is information, while sharing the shape.
+                                    DetailActionRow(
+                                        isPlaying = false,
+                                        playLabel = "Play",
+                                        onPlayPause = { viewModel.onPlayPopularClick() },
+                                        leading = {
+                                            DetailCircleButton(
+                                                icon = SonoraIcons.Sensors,
                                                 contentDescription = "Radio",
-                                                tint = artistAccent,
-                                                modifier = Modifier.size(22.dp),
+                                                onClick = {
+                                                    state.data.radioParam?.let { viewModel.onRadioClick(it) }
+                                                },
                                             )
-                                        }
-                                        // Shuffle — primary "play" for an artist. Circular icon button filled
-                                        // with the artist accent (white fallback); icon uses the dark page
-                                        // background color so it stays legible on a bright accent.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(64.dp)
-                                                    .clip(CircleShape)
-                                                    .background(artistAccent)
-                                                    .clickable {
-                                                        val param = state.data.shuffleParam
-                                                        if (param != null) {
-                                                            viewModel.onShuffleClick(param)
-                                                        } else {
-                                                            viewModel.makeToast(runBlocking { getString(Res.string.error) })
-                                                        }
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = SonoraIcons.Shuffle,
-                                                contentDescription = "Shuffle",
-                                                tint = mutedPaletteBg,
-                                                modifier = Modifier.size(28.dp),
-                                            )
-                                        }
-                                        // Follow — side button matching Radio: outlined accent (yellow)
-                                        // circle when not following; fills with the accent (icon flips to
-                                        // the dark page bg) once followed, so the state reads at a glance.
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .size(48.dp)
-                                                    .clip(CircleShape)
-                                                    .background(if (isFollowed) artistAccent else Color.Transparent)
-                                                    .border(1.5.dp, artistAccent, CircleShape)
-                                                    .clickable {
-                                                        viewModel.updateFollowed(
-                                                            if (isFollowed) 0 else 1,
-                                                            state.data.channelId ?: return@clickable,
-                                                        )
-                                                    },
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Icon(
-                                                imageVector = if (isFollowed) SonoraIcons.Check else SonoraIcons.PersonAdd,
+                                        },
+                                        trailing = {
+                                            DetailCircleButton(
+                                                icon = if (isFollowed) SonoraIcons.Check else SonoraIcons.PersonAdd,
                                                 contentDescription = if (isFollowed) "Followed" else "Follow",
-                                                tint = if (isFollowed) mutedPaletteBg else artistAccent,
-                                                modifier = Modifier.size(22.dp),
+                                                tint = if (isFollowed) Color.Black else Color.White,
+                                                containerColor =
+                                                    if (isFollowed) artistAccent else Color.White.copy(alpha = 0.12f),
+                                                onClick = {
+                                                    viewModel.updateFollowed(
+                                                        if (isFollowed) 0 else 1,
+                                                        state.data.channelId ?: return@DetailCircleButton,
+                                                    )
+                                                },
                                             )
-                                        }
-                                    }
+                                        },
+                                    )
                                 }
                             }
                             item(contentType = "sections") {
@@ -622,7 +571,7 @@ fun ArtistScreen(
                             ) {
                                 Row {
                                     Text(
-                                        text = state.data.subscribers ?: stringResource(Res.string.unknown),
+                                        text = state.data.subscribers?.toShortViewCount() ?: stringResource(Res.string.unknown),
                                         style = typo().bodySmall,
                                         color = Color.White,
                                         textAlign = TextAlign.Start,
@@ -855,6 +804,7 @@ private fun ArtistSections(
                         forceDark = true,
                         track = song,
                         isPlaying = song.videoId == playingTrack,
+                        showDuration = true,
                         modifier = Modifier.fillMaxWidth(),
                         onMoreClickListener = {
                             onTrackMore(song)
@@ -934,7 +884,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.singles?.results ?: emptyList()) { single ->
+                    items(
+                                        (state.data.singles?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { single ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1002,7 +955,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.albums?.results ?: emptyList()) { album ->
+                    items(
+                                        (state.data.albums?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { album ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1069,7 +1025,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.video?.video ?: emptyList()) { video ->
+                    items(
+                                        (state.data.video?.video ?: emptyList()).distinctBy { it.videoId },
+                                        key = { it.videoId },
+                                    ) { video ->
                         HomeItemVideo(
                             forceDark = true,                            onClick = {
                                 val firstQueue: Track = video
@@ -1136,7 +1095,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.featuredOn) { feature ->
+                    items(
+                                        state.data.featuredOn.distinctBy { it.id },
+                                        key = { it.id },
+                                    ) { feature ->
                         HomeItemContentPlaylist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1184,7 +1146,10 @@ private fun ArtistSections(
                     item {
                         Spacer(Modifier.size(10.dp))
                     }
-                    items(state.data.related?.results ?: emptyList()) { related ->
+                    items(
+                                        (state.data.related?.results ?: emptyList()).distinctBy { it.browseId },
+                                        key = { it.browseId },
+                                    ) { related ->
                         HomeItemArtist(
                             forceDark = true,                            onClick = {
                                 navController.navigate(
@@ -1203,7 +1168,7 @@ private fun ArtistSections(
                                                 name = related.title,
                                             ),
                                         ),
-                                    description = related.subscribers,
+                                    description = related.subscribers?.toShortViewCount(),
                                     isExplicit = null,
                                     playlistId = null,
                                     browseId = related.browseId,
@@ -1222,39 +1187,45 @@ private fun ArtistSections(
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            Text(
-                text = stringResource(Res.string.description),
-                style = typo().labelMedium,
-                color = Color.White,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(vertical = 12.dp),
-            )
-        }
-        val urlHandler = LocalUriHandler.current
-        ElevatedCard(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            shape = SonoraShapes.Container,
-            colors =
-                CardDefaults.elevatedCardColors().copy(
-                    containerColor = descriptionTint.rgbFactor(0.5f),
-                ),
-        ) {
-            DescriptionView(
-                modifier = Modifier.padding(16.dp),
-                text = state.data.description ?: stringResource(Res.string.no_description),
-                limitLine = 5,
-                onTimeClicked = {},
-                onURLClicked = { url ->
-                    urlHandler.openUri(url)
-                },
-            )
+        // Nothing at all when there is nothing to describe. A heading over a card reading "No
+        // description" spends a section of the page reporting an absence, which is worse than the
+        // gap it fills.
+        val description = state.data.description?.takeIf { it.isNotBlank() }
+        if (description != null) {
+            Spacer(Modifier.height(10.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Text(
+                    text = stringResource(Res.string.description),
+                    style = typo().labelMedium,
+                    color = Color.White,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(vertical = 12.dp),
+                )
+            }
+            val urlHandler = LocalUriHandler.current
+            ElevatedCard(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                shape = SonoraShapes.Container,
+                colors =
+                    CardDefaults.elevatedCardColors().copy(
+                        containerColor = descriptionTint.rgbFactor(0.5f),
+                    ),
+            ) {
+                DescriptionView(
+                    modifier = Modifier.padding(16.dp),
+                    text = description,
+                    limitLine = 5,
+                    onTimeClicked = {},
+                    onURLClicked = { url ->
+                        urlHandler.openUri(url)
+                    },
+                )
+            }
         }
         EndOfPage()
     }

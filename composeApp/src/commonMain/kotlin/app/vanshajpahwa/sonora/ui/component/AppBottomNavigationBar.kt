@@ -27,6 +27,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.size
@@ -58,6 +60,16 @@ import org.jetbrains.compose.resources.painterResource
 import app.vanshajpahwa.sonora.resources.*
 
 /**
+ * Opacity of the capsule when the translucent setting is on, which it is by default.
+ *
+ * Kept low on purpose: seeing content through the bar is the effect, so this trades some label
+ * legibility for it and text scrolling behind can still compete with the tab labels. Raising this
+ * is the wrong fix for that, since sharpness rather than brightness is what competes; a blur or a
+ * gradient behind the labels is, and the liquid glass variant already blurs.
+ */
+private const val TRANSLUCENT_BAR_ALPHA = 0.85f
+
+/**
  * The floating capsule nav bar.
  *
  * Detached from the screen edge rather than spanning it. That is the whole point of the shape: an
@@ -78,6 +90,10 @@ fun AppBottomNavigationBar(
     navController: NavController,
     isTranslucentBackground: Boolean = false,
     isScrolledToTop: Boolean = true,
+    // Drawn by this bar rather than stacked above it by the caller, because where it belongs
+    // depends on the collapse state: beside the button when collapsed, above the capsule when not.
+    // The modifier passed in carries the width, so the caller only decides height and padding.
+    miniPlayer: (@Composable (Modifier) -> Unit)? = null,
     reloadDestinationIfNeeded: (KClass<*>) -> Unit = { _ -> },
 ) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -117,15 +133,32 @@ fun AppBottomNavigationBar(
         if (!isInSearchDestination) isExpanded = isScrolledToTop
     }
 
+    // Moved between the two layouts rather than rebuilt in each. Collapsed and expanded are
+    // different subtrees, so the player would otherwise be disposed and recomposed every time the
+    // bar changes shape, re-reading its artwork and re-extracting its palette in the middle of a
+    // scroll. movableContentOf carries the state across instead, which is what makes the change of
+    // shape free rather than the most expensive frame in the gesture.
+    val latestMiniPlayer by rememberUpdatedState(miniPlayer)
+    val movableMiniPlayer =
+        remember {
+            movableContentOf<Modifier> { widthModifier ->
+                latestMiniPlayer?.invoke(widthModifier)
+            }
+        }
+
     if (!isExpanded) {
         val collapsedScreen =
             if (isInSearchDestination) BottomNavScreen.Home else BottomNavScreen.Search
-        Box(
+        // One line, not two. Collapsed leaves a single small button, and a full width mini player
+        // stacked over it reads as a row with almost nothing in it, so the player takes the space
+        // the tabs gave up and the two sit together.
+        Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier =
@@ -137,7 +170,7 @@ fun AppBottomNavigationBar(
                         .clip(CircleShape)
                         .background(
                             if (isTranslucentBackground) {
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                                MaterialTheme.colorScheme.surface.copy(alpha = TRANSLUCENT_BAR_ALPHA)
                             } else {
                                 MaterialTheme.colorScheme.surfaceContainer
                             },
@@ -163,17 +196,22 @@ fun AppBottomNavigationBar(
                     collapsedScreen.icon()
                 }
             }
+            if (miniPlayer != null) {
+                Spacer(Modifier.width(12.dp))
+                movableMiniPlayer(Modifier.weight(1f))
+            }
         }
         return
     }
 
-    Box(
+    Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
     ) {
+        if (miniPlayer != null) movableMiniPlayer(Modifier.fillMaxWidth())
         BoxWithConstraints(
             modifier =
                 Modifier
@@ -185,7 +223,7 @@ fun AppBottomNavigationBar(
                         // behind a fully transparent capsule made the labels unreadable on light
                         // covers, which is the "looks like a bug" case rather than a glass effect.
                         if (isTranslucentBackground) {
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+                            MaterialTheme.colorScheme.surface.copy(alpha = TRANSLUCENT_BAR_ALPHA)
                         } else {
                             MaterialTheme.colorScheme.surfaceContainer
                         },

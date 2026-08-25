@@ -93,6 +93,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import app.vanshajpahwa.sonora.resources.Res
+import app.vanshajpahwa.sonora.resources.recommended_songs
 import app.vanshajpahwa.sonora.resources.added_to_queue
 import app.vanshajpahwa.sonora.resources.added_to_youtube_liked
 import app.vanshajpahwa.sonora.resources.error
@@ -315,9 +316,13 @@ class SharedViewModel(
                                 lyricsData = null,
                                 songInfoData = null,
                                 playlistName =
-                                    mediaPlayerHandler.queueData.value
-                                        ?.data
-                                        ?.playlistName ?: "",
+                                    mediaPlayerHandler.queueData.value?.data.let { data ->
+                                        if (data?.isRecommendation == true) {
+                                            getString(Res.string.recommended_songs)
+                                        } else {
+                                            data?.playlistName.orEmpty()
+                                        }
+                                    },
                             )
                     }
                     state.mediaItem.let { now ->
@@ -440,10 +445,19 @@ class SharedViewModel(
                 }
             val playlistNameJob =
                 launch {
-                    mediaPlayerHandler.queueData.collectLatest {
-                        _nowPlayingScreenData.update {
-                            it.copy(playlistName = it.playlistName)
-                        }
+                    // Reads the queue it collected. This copied the existing name back onto itself,
+                    // so the header kept whatever it was first given and never followed the queue.
+                    mediaPlayerHandler.queueData.collectLatest { queue ->
+                        val data = queue?.data
+                        // Once the endless queue takes over, the album or shelf it started from is no
+                        // longer what is playing, so it stops being what the player claims.
+                        val name =
+                            if (data?.isRecommendation == true) {
+                                getString(Res.string.recommended_songs)
+                            } else {
+                                data?.playlistName.orEmpty()
+                            }
+                        _nowPlayingScreenData.update { it.copy(playlistName = name) }
                     }
                 }
             job1.join()

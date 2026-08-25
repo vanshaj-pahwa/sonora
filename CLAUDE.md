@@ -36,16 +36,54 @@ stop, imperative mood, 72 characters or fewer. Types in use here:
 
 Add a scope when it narrows things usefully: `fix(auto):`, `perf(player):`.
 
-**Body: a short bulleted list, three to six points.** One line of context first if the subject
-needs it, then bullets. Each bullet is one change or one reason, written as a full sentence. A one
-line commit throws away the only context that survives; a wall of prose stops being read. Skip the
-body only when the subject genuinely says everything, which is rare outside `chore` and `docs`.
+**Name the change plainly. No figures of speech.** The subject says what was added, fixed or
+changed, in the most ordinary words available. "add output device indicator" not "show where the
+audio is going"; "improve mini player readability" not "calm the mini player down"; "reduce bleed
+through the translucent bar" not "quiet the bar". Someone scanning `git log` is looking for the
+change, not for a turn of phrase, and a subject that has to be decoded is a subject that gets
+skipped. Start with a verb, name the thing, and stop.
+
+**Body: as long as the change, and no longer.** A one line subject is the whole commit for a one
+line fix, and padding it out with bullets invents significance the change does not have. Add a body
+when there is something a reader could not get from the diff: why it was wrong, what else it
+touched, what was deliberately left alone. When a body earns its place, one line of context first
+if the subject needs it, then bullets, each one change or one reason written as a full sentence.
+Six bullets is a ceiling for a commit that genuinely did six things, not a target.
 
 Never cite upstream issue numbers or link the upstream tracker, in commit messages or in code
 comments. Describe the defect and its symptom on their own terms; a reader here cannot open
 that tracker anyway, and the description is what stays useful.
 
+**Never put raw identifiers or captured data in a commit message.** Channel ids, video ids, rows
+read out of the database, log lines from a debugging session: these are the evidence, not the
+explanation. State the rule they proved, not the values that proved it. "YouTube issues more than
+one channel id for the same artist" is the finding; the two ids that revealed it belong to the
+investigation and not to permanent history. They are also read from the author's own library, and
+a repository is a worse place for that than a scratch file.
+
 One commit, one idea. A refactor and the bug fix it uncovered are two commits, not one.
+
+---
+
+## Comments
+
+**Comment sparingly.** Most code needs none. Reach for one when a reader would otherwise ask "why
+is it like this", and leave the rest to the code. A file where every block carries a paragraph is
+one nobody finishes reading, and the comments stop being noticed exactly when one of them matters.
+
+**Two or three lines is a normal comment.** A paragraph needs to earn itself: a trap that has
+already cost time, a constraint that is not visible from here, a deliberate choice that looks wrong.
+If it is only restating the line below it, delete it.
+
+**Never write the conversation into the code.** A comment is read by someone who was not there. It
+must not mention the chat that produced it, a review, a request, a previous attempt, what a value
+used to be before it was changed, or who decided anything. No "as discussed", no "the user asked
+for", no "this was briefly X", no "reverted from Y", no session or date references.
+
+Describe the code as it stands and why it stands that way. Where the old behaviour genuinely
+explains the shape, state it as a property of the problem, not as a story about editing it: "a Box
+takes the height of its tallest child, so a fixed height here would floor the section" rather than
+"this used to be 300dp and caused a gap". History belongs in git, and git is where to look for it.
 
 ---
 

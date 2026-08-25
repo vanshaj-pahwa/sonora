@@ -23,6 +23,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,7 +61,12 @@ fun HomeSectionHeader(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    // The part of the title that names something specific, drawn as if marked by hand. Null leaves
+    // the header plain, which is right for a fixed heading like Your rotation.
+    underline: String? = null,
 ) {
+    val accent = MaterialTheme.colorScheme.primary
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = HomeGutter),
         verticalAlignment = Alignment.CenterVertically,
@@ -64,7 +78,58 @@ fun HomeSectionHeader(
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f, fill = false),
+            onTextLayout = { layout = it },
+            modifier =
+                Modifier
+                    .weight(1f, fill = false)
+                    .drawBehind {
+                        val result = layout ?: return@drawBehind
+                        val mark = underline?.takeIf { it.isNotBlank() } ?: return@drawBehind
+                        val start = title.indexOf(mark).takeIf { it >= 0 } ?: return@drawBehind
+                        val end = start + mark.length
+                        if (end > result.layoutInput.text.length) return@drawBehind
+                        val first = result.getBoundingBox(start)
+                        val last = result.getBoundingBox(end - 1)
+                        // Ellipsised or wrapped onto a second line: the box no longer describes what
+                        // is on screen, and a stroke drawn from it lands across unrelated words.
+                        if (first.top != last.top) return@drawBehind
+                        if (last.right <= first.left) return@drawBehind
+
+                        val left = first.left - 1.dp.toPx()
+                        val right = last.right + 1.dp.toPx()
+                        val span = right - left
+                        val baseY = last.bottom - 1.dp.toPx()
+
+                        // A tapered stroke, not a rule and not a squiggle: thin where the pen lands,
+                        // thickest through the middle, thin again as it lifts, with a slight rise to
+                        // the right so it sits like something drawn rather than typeset. Filled
+                        // rather than stroked, because an even stroke width is exactly what makes a
+                        // line look mechanical.
+                        val thickness = 3.4.dp.toPx()
+                        val rise = 1.6.dp.toPx()
+                        val path = Path()
+                        path.moveTo(left, baseY)
+                        // Upper edge, left to right.
+                        path.cubicTo(
+                            left + span * 0.28f,
+                            baseY - thickness * 0.28f,
+                            left + span * 0.72f,
+                            baseY - rise - thickness * 0.28f,
+                            right,
+                            baseY - rise,
+                        )
+                        // Lower edge, back again, bulging to give the middle its weight.
+                        path.cubicTo(
+                            left + span * 0.72f,
+                            baseY - rise + thickness,
+                            left + span * 0.28f,
+                            baseY + thickness,
+                            left,
+                            baseY,
+                        )
+                        path.close()
+                        drawPath(path = path, color = accent.copy(alpha = 0.92f))
+                    },
         )
         if (actionLabel != null && onAction != null) {
             Row(

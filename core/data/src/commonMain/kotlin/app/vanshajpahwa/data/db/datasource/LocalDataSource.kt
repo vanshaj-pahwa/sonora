@@ -57,6 +57,10 @@ internal class LocalDataSource(
 
     fun getRecentSongsAsFlow(limit: Int) = databaseDao.getRecentSongsAsFlow(limit)
 
+    fun getAllSongsAsFlow(limit: Int) = databaseDao.getAllSongsAsFlow(limit)
+
+    suspend fun getArtistByName(name: String) = databaseDao.getArtistByName(name)
+
     suspend fun getRecentSongs(
         limit: Int,
         offset: Int,

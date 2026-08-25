@@ -74,7 +74,7 @@ import app.vanshajpahwa.sonora.resources.most_played
 import app.vanshajpahwa.sonora.resources.no_favorite_playlists
 import app.vanshajpahwa.sonora.resources.no_playlists_downloaded
 import app.vanshajpahwa.sonora.resources.radio
-import app.vanshajpahwa.sonora.resources.recently_added
+import app.vanshajpahwa.sonora.resources.recently_played
 import app.vanshajpahwa.domain.mediaservice.handler.PlaylistType as DomainPlaylistType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +89,7 @@ fun LibraryItem(
     var songEntity by remember { mutableStateOf<SongEntity?>(null) }
     val title =
         when (state.type) {
-            is LibraryItemType.RecentlyAdded -> stringResource(Res.string.recently_added)
+            is LibraryItemType.RecentlyAdded -> stringResource(Res.string.recently_played)
             is LibraryItemType.CanvasSong -> stringResource(Res.string.most_played)
             else -> return
         }
@@ -97,7 +97,7 @@ fun LibraryItem(
         when (state.type) {
             LibraryItemType.DownloadedPlaylist -> stringResource(Res.string.no_playlists_downloaded)
             LibraryItemType.FavoritePlaylist -> stringResource(Res.string.no_favorite_playlists)
-            is LibraryItemType.RecentlyAdded -> stringResource(Res.string.recently_added)
+            is LibraryItemType.RecentlyAdded -> stringResource(Res.string.recently_played)
             is LibraryItemType.CanvasSong -> stringResource(Res.string.most_played)
             else -> return
         }
@@ -147,6 +147,8 @@ fun LibraryItem(
                                         SongFullWidthItems(
                                             songEntity = item as SongEntity,
                                             isPlaying = item.videoId == state.type.playingVideoId,
+                                            // Songs only; album and playlist rows here have none.
+                                            showDuration = true,
                                             modifier = Modifier,
                                             onMoreClickListener = {
                                                 songEntity = item

@@ -38,6 +38,7 @@ import app.vanshajpahwa.logger.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -436,6 +437,57 @@ internal class PlaylistRepositoryImpl(
             }
         }.flowOn(Dispatchers.IO)
 
+    /**
+     * Serves the stored copy of a playlist when the request for it fails, or the error if there is
+     * no usable copy. Every failure path in [getPlaylistData] routes through here, including the
+     * parse that returns nothing, so an offline open behaves the same whichever way it fails.
+     *
+     * The continuation is null because a cached playlist holds only the page that was stored, and
+     * claiming more is available would leave the caller paging into nothing.
+     */
+    private suspend fun FlowCollector<Resource<Pair<PlaylistBrowse, String?>>>.emitCachedPlaylistOrError(
+        playlistId: String,
+        message: String,
+    ) {
+        val cached = cachedPlaylist(playlistId)
+        if (cached != null) {
+            Logger.d("getPlaylistData", "served $playlistId from cache")
+            emit(Resource.Success(cached to null))
+        } else {
+            emit(Resource.Error(message))
+        }
+    }
+
+    /**
+     * Rebuilds a playlist from the stored row and the songs it references, or null if too little was
+     * kept to be worth showing.
+     *
+     * Order comes from the stored track list because `WHERE videoId IN (...)` does not preserve it.
+     * The author id is not stored, only the name, so callers resolve the artist by name.
+     */
+    private suspend fun cachedPlaylist(playlistId: String): PlaylistBrowse? {
+        val id = playlistId.removePrefix("VL")
+        val playlist = localDataSource.getPlaylist(id) ?: localDataSource.getPlaylist(playlistId) ?: return null
+        val trackIds = playlist.tracks.orEmpty()
+        if (trackIds.isEmpty()) return null
+        val byId = localDataSource.getSongByListVideoIdFull(trackIds).associateBy { it.videoId }
+        val tracks = trackIds.mapNotNull { byId[it]?.toTrack() }
+        if (tracks.isEmpty()) return null
+        return PlaylistBrowse(
+            author = Author(id = "", name = playlist.author.orEmpty()),
+            description = playlist.description,
+            duration = playlist.duration,
+            durationSeconds = playlist.durationSeconds,
+            id = playlist.id,
+            privacy = playlist.privacy,
+            thumbnails = listOf(Thumbnail(height = 544, url = playlist.thumbnails, width = 544)),
+            title = playlist.title,
+            trackCount = playlist.trackCount,
+            tracks = tracks,
+            year = playlist.year.orEmpty(),
+        )
+    }
+
     override fun getPlaylistData(
         playlistId: String,
         viewString: String,
@@ -531,26 +583,14 @@ internal class PlaylistRepositoryImpl(
                                         ),
                                     ),
                                 )
-                            } ?: emit(
-                                Resource.Error<
-                                    Pair<PlaylistBrowse, String?>,
-                                >("Error"),
-                            )
+                            } ?: emitCachedPlaylistOrError(playlistId, "Error")
                         } catch (e: Exception) {
                             e.printStackTrace()
-                            emit(
-                                Resource.Error<
-                                    Pair<PlaylistBrowse, String?>,
-                                >(e.message.toString()),
-                            )
+                            emitCachedPlaylistOrError(playlistId, e.message.toString())
                         }
                     }.onFailure { e ->
                         Logger.e("getPlaylistData", e.message ?: "Error")
-                        emit(
-                            Resource.Error<
-                                Pair<PlaylistBrowse, String?>,
-                            >(e.message.toString()),
-                        )
+                        emitCachedPlaylistOrError(playlistId, e.message.toString())
                     }
             }
         }.flowOn(Dispatchers.IO)

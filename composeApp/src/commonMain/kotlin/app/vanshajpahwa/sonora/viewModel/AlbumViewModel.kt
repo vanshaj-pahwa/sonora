@@ -33,14 +33,44 @@ import app.vanshajpahwa.sonora.resources.album
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.error
 import app.vanshajpahwa.sonora.resources.playlist_is_empty
+import app.vanshajpahwa.domain.repository.ArtistRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 class AlbumViewModel(
     private val songRepository: SongRepository,
     private val albumRepository: AlbumRepository,
+    private val artistRepository: ArtistRepository,
 ) : BaseViewModel() {
     private val downloadUtils: DownloadHandler by inject<DownloadHandler>()
     private val _uiState: MutableStateFlow<AlbumUIState> = MutableStateFlow(AlbumUIState.initial())
     val uiState: StateFlow<AlbumUIState> = _uiState
+
+    /**
+     * The album artist's picture, when the device already has one.
+     *
+     * Read from Room rather than fetched. An album page should not spend a request on decoration,
+     * and any artist the user has played, followed or browsed is already stored with a thumbnail.
+     * Null simply means no picture, and the row falls back to the name on its own.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val artistThumbnail: StateFlow<String?> =
+        uiState
+            .map { it.artist.id to it.artist.name }
+            .distinctUntilChanged()
+            .flatMapLatest { (id, name) ->
+                if (id.isNullOrBlank() && name.isBlank()) {
+                    flowOf(null)
+                } else {
+                    artistRepository.getArtistByIdOrName(id, name).map { it?.thumbnails }
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
 
     private var job: Job? = null
     private var collectDownloadStateJob: Job? = null

@@ -1297,6 +1297,7 @@ fun LocalPlaylistScreen(
                         SongFullWidthItems(
                             forceDark = true,
                             isPlaying = true,
+                            showDuration = true,
                             shouldShowDragHandle = changingOrder,
                             songEntity = item,
                             onMoreClickListener = { onItemMoreClick(it) },
@@ -1315,6 +1316,7 @@ fun LocalPlaylistScreen(
                         SongFullWidthItems(
                             forceDark = true,
                             isPlaying = false,
+                            showDuration = true,
                             shouldShowDragHandle = changingOrder,
                             songEntity = item,
                             onMoreClickListener = { onItemMoreClick(it) },

@@ -219,7 +219,14 @@ interface DatabaseDao {
     suspend fun insertSearchHistory(searchHistory: SearchHistory): Long
 
     // Song
-    @Query("SELECT * FROM song ORDER BY inLibrary DESC LIMIT :limit OFFSET :offset")
+    /**
+     * Songs actually played, newest first, paged.
+     *
+     * The totalPlayTime filter is what separates played from stored. Opening an album writes every
+     * one of its tracks into this table, so without it a single album turns into a page of songs
+     * that were never heard.
+     */
+    @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY inLibrary DESC LIMIT :limit OFFSET :offset")
     suspend fun getRecentSongs(
         limit: Int,
         offset: Int,
@@ -229,6 +236,16 @@ interface DatabaseDao {
     suspend fun getAllSongs(limit: Int): List<SongEntity>
 
     /**
+     * Everything in the library, newest first, as a live flow.
+     *
+     * The suspend getAllSongs above emits once and never again, so a Home tile built on it froze at
+     * whatever was newest when the screen first composed. This is also deliberately unfiltered: the
+     * Recently added tile counts what has been added, which is what the screen behind it lists.
+     */
+    @Query("SELECT * FROM song ORDER BY inLibrary DESC LIMIT :limit OFFSET 0")
+    fun getAllSongsAsFlow(limit: Int): Flow<List<SongEntity>>
+
+    /**
      * Songs the user has actually played, newest first.
      *
      * The totalPlayTime filter is what separates played from merely stored. The song table holds
@@ -236,6 +253,10 @@ interface DatabaseDao {
      * "what did I listen to", and only this one has a play behind it. It also quietly excludes rows
      * left over from when the entity defaulted its timestamp to now(), so no migration is needed to
      * stop showing them.
+     *
+     * A song lands here once it has played 20% of its length, or 30 seconds where the length is
+     * unknown, and then been moved away from. Both columns are written at that moment by
+     * mayBeRecordPlay, so opening, queueing or skipping past a song adds nothing.
      */
     @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY inLibrary DESC LIMIT :limit OFFSET 0")
     suspend fun getRecentlyPlayedSongs(limit: Int): List<SongEntity>
@@ -392,6 +413,9 @@ interface DatabaseDao {
      * this list seeds both the Play it again row and the More like shelves, their Home showed no
      * trace of anything they had listened to. Recently played used > 0 and did appear, which is
      * what made the feed look arbitrarily half empty rather than simply new.
+     *
+     * Same rule as [getRecentSongsAsFlow]. The counter rises once per qualifying listen, so this
+     * ranks by how often a song was played through rather than how often it appeared in a queue.
      */
     @Query("SELECT * FROM song WHERE totalPlayTime > 0 ORDER BY totalPlayTime DESC LIMIT 50")
     fun getMostPlayedSongs(): Flow<List<SongEntity>>
@@ -463,6 +487,16 @@ interface DatabaseDao {
 
     @Query("SELECT * FROM artist WHERE channelId = :channelId")
     suspend fun getArtist(channelId: String): ArtistEntity?
+
+    /**
+     * An artist by display name, for when the channel id does not match.
+     *
+     * YouTube hands out more than one channel for the same artist: the id on a playlist's author
+     * differs from the one stored when their artist page was browsed, so a lookup by id alone
+     * misses an artist the device already has a picture for.
+     */
+    @Query("SELECT * FROM artist WHERE name = :name LIMIT 1")
+    suspend fun getArtistByName(name: String): ArtistEntity?
 
     @Query("SELECT * FROM artist WHERE followed = 1 ORDER BY followedAt DESC LIMIT :limit OFFSET :offset")
     suspend fun getFollowedArtists(

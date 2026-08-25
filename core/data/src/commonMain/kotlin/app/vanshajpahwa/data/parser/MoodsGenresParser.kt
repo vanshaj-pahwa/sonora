@@ -140,9 +140,17 @@ internal fun parseMoodsMomentObject(data: BrowseResponse?): MoodsMomentObject? {
                                         ?.navigationEndpoint
                                         ?.browseEndpoint
                                         ?.browseId
+                                val pageType =
+                                    content.musicTwoRowItemRenderer
+                                        ?.navigationEndpoint
+                                        ?.browseEndpoint
+                                        ?.browseEndpointContextSupportedConfigs
+                                        ?.browseEndpointContextMusicConfig
+                                        ?.pageType
                                 listContent.add(
                                     Content(
                                         playlistBrowseId = playlistBrowseId ?: "",
+                                        pageType = pageType,
                                         subtitle = subtitle,
                                         thumbnails = thumbnails ?: listOf(),
                                         title = contentTitle ?: "",
@@ -192,9 +200,17 @@ internal fun parseMoodsMomentObject(data: BrowseResponse?): MoodsMomentObject? {
                                         ?.navigationEndpoint
                                         ?.browseEndpoint
                                         ?.browseId
+                                val pageType =
+                                    content.musicTwoRowItemRenderer
+                                        ?.navigationEndpoint
+                                        ?.browseEndpoint
+                                        ?.browseEndpointContextSupportedConfigs
+                                        ?.browseEndpointContextMusicConfig
+                                        ?.pageType
                                 listContent.add(
                                     Content(
                                         playlistBrowseId = playlistBrowseId ?: "",
+                                        pageType = pageType,
                                         subtitle = subtitle,
                                         thumbnails = thumbnails ?: listOf(),
                                         title = contentTitle ?: "",
@@ -323,9 +339,17 @@ internal fun parseGenreObject(data: BrowseResponse?): GenreObject? {
                                         ?.navigationEndpoint
                                         ?.browseEndpoint
                                         ?.browseId
+                                val pageType =
+                                    content.musicTwoRowItemRenderer
+                                        ?.navigationEndpoint
+                                        ?.browseEndpoint
+                                        ?.browseEndpointContextSupportedConfigs
+                                        ?.browseEndpointContextMusicConfig
+                                        ?.pageType
                                 listContent.add(
                                     GenreContent(
                                         playlistBrowseId = playlistBrowseId ?: "",
+                                        pageType = pageType,
                                         thumbnail = thumbnails ?: listOf(),
                                         title =
                                             Title(
@@ -378,9 +402,17 @@ internal fun parseGenreObject(data: BrowseResponse?): GenreObject? {
                                         ?.navigationEndpoint
                                         ?.browseEndpoint
                                         ?.browseId
+                                val pageType =
+                                    content.musicTwoRowItemRenderer
+                                        ?.navigationEndpoint
+                                        ?.browseEndpoint
+                                        ?.browseEndpointContextSupportedConfigs
+                                        ?.browseEndpointContextMusicConfig
+                                        ?.pageType
                                 listContent.add(
                                     GenreContent(
                                         playlistBrowseId = playlistBrowseId ?: "",
+                                        pageType = pageType,
                                         thumbnail = thumbnails ?: listOf(),
                                         title =
                                             Title(

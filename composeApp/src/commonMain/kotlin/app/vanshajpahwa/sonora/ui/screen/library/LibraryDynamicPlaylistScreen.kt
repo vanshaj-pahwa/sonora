@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Row
 import app.vanshajpahwa.sonora.ui.component.ListControlsRow
 import app.vanshajpahwa.sonora.ui.component.ListSort
 import app.vanshajpahwa.sonora.ui.component.SongGridItem
-import app.vanshajpahwa.sonora.resources.custom_order
+import app.vanshajpahwa.sonora.resources.sort_date_added
+import app.vanshajpahwa.sonora.resources.sort_date_liked
+import app.vanshajpahwa.sonora.resources.sort_play_count
 import app.vanshajpahwa.sonora.resources.title
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -326,6 +328,7 @@ fun LibraryDynamicPlaylistScreen(
                         SongFullWidthItems(
                             songEntity = song.second,
                             isPlaying = song.second.videoId == nowPlayingVideoId,
+                            showDuration = true,
                             modifier = Modifier.fillMaxWidth(),
                             onMoreClickListener = {
                                 chosenSong = song.second
@@ -422,7 +425,18 @@ fun LibraryDynamicPlaylistScreen(
                     onSortChange = { listSort = it },
                     isGrid = isGridLayout,
                     onToggleLayout = { isGridLayout = !isGridLayout },
-                    defaultSortLabel = stringResource(Res.string.custom_order),
+                    // Names the order the page actually arrives in. One shared "Custom order" told
+                    // the reader nothing and was untrue on a page whose whole purpose is a ranking.
+                    defaultSortLabel =
+                        stringResource(
+                            when (type) {
+                                LibraryDynamicPlaylistType.MostPlayed,
+                                LibraryDynamicPlaylistType.TopTracks,
+                                -> Res.string.sort_play_count
+                                LibraryDynamicPlaylistType.Favorite -> Res.string.sort_date_liked
+                                else -> Res.string.sort_date_added
+                            },
+                        ),
                     titleLabel = stringResource(Res.string.title),
                     artistLabel = stringResource(Res.string.artists),
                 )
@@ -460,6 +474,7 @@ fun LibraryDynamicPlaylistScreen(
                 SongFullWidthItems(
                     songEntity = song,
                     isPlaying = song.videoId == nowPlayingVideoId,
+                    showDuration = true,
                     modifier = Modifier.fillMaxWidth(),
                     onMoreClickListener = {
                         chosenSong = song
@@ -499,6 +514,17 @@ fun LibraryDynamicPlaylistScreen(
             type != LibraryDynamicPlaylistType.Followed &&
                 type != LibraryDynamicPlaylistType.TopArtists &&
                 type != LibraryDynamicPlaylistType.TopAlbums
+        // Gates Play and Shuffle, which do nothing on an empty list and read as broken rather than
+        // as empty. Counted off the unfiltered lists like the subtitle above, so a search matching
+        // nothing does not strip the controls from a page that does have songs.
+        val hasSongsToPlay =
+            when (type) {
+                LibraryDynamicPlaylistType.Favorite -> favorite.isNotEmpty()
+                LibraryDynamicPlaylistType.MostPlayed -> mostPlayed.isNotEmpty()
+                LibraryDynamicPlaylistType.Downloaded -> downloaded.isNotEmpty()
+                LibraryDynamicPlaylistType.TopTracks -> !analyticsUIState.topTracks.data.isNullOrEmpty()
+                else -> false
+            }
         // Counts always come from the unfiltered lists, so the subtitle keeps reporting the
         // library total while the user is typing in the search bar.
         val subtitle =
@@ -551,7 +577,7 @@ fun LibraryDynamicPlaylistScreen(
                     }
                 },
                 actions = {
-                    if (isSongType) {
+                    if (isSongType && hasSongsToPlay) {
                         RippleIconButton(
                             SonoraIcons.PlayCircle,
                             Modifier

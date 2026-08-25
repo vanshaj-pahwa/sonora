@@ -16,6 +16,7 @@ import app.vanshajpahwa.kotlinytmusicscraper.models.VideoItem
 import app.vanshajpahwa.kotlinytmusicscraper.models.YTItem
 import app.vanshajpahwa.kotlinytmusicscraper.models.oddElements
 import app.vanshajpahwa.kotlinytmusicscraper.models.splitBySeparator
+import app.vanshajpahwa.kotlinytmusicscraper.utils.parseTime
 
 data class ArtistSection(
     val title: String,
@@ -126,7 +127,18 @@ data class ArtistPage(
                                     id = it.navigationEndpoint?.browseEndpoint?.browseId!!,
                                 )
                             },
-                    duration = null,
+                    // The response carries it in fixedColumns, exactly as an album's track list
+                    // does, and parseTime turns "3:12" into seconds. This parser simply never read
+                    // it, so every artist row arrived with no running time and the column was blank.
+                    duration =
+                        renderer.fixedColumns
+                            ?.firstOrNull()
+                            ?.musicResponsiveListItemFlexColumnRenderer
+                            ?.text
+                            ?.runs
+                            ?.firstOrNull()
+                            ?.text
+                            ?.parseTime(),
                     thumbnail =
                         renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl()
                             ?: return null,

@@ -93,6 +93,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.koin.mp.KoinPlatform.getKoin
@@ -100,6 +101,38 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.pow
 
 private val TAG = "Media3ServiceHandlerImpl"
+
+/**
+ * How much of a track has to play before it counts as a listen, as a percentage of its duration.
+ *
+ * Low enough that a track sampled properly counts, high enough that skipping past one does not.
+ */
+private const val MIN_LISTEN_PERCENT = 20L
+
+/**
+ * Past this much of a track, the listening report files the play as the whole thing rather than as
+ * the exact position, so a track that ran to its end is not recorded a few seconds short.
+ */
+private const val NEAR_COMPLETE_PERCENT = 80L
+
+/**
+ * Threshold for a track whose duration is unknown, where a percentage cannot be worked out.
+ *
+ * Duration arrives as 0 often enough that treating those tracks as ineligible silently excluded
+ * them from the listening report no matter how long they played.
+ */
+private const val MIN_LISTEN_MILLIS_UNKNOWN_DURATION = 30_000L
+
+/**
+ * How long to wait before resolving the next track's stream.
+ *
+ * Long enough that the track now playing has claimed the bandwidth it needs, and long enough that
+ * skipping through a queue cancels each prefetch before any request is made.
+ */
+private const val PREFETCH_DELAY_MS = 5_000L
+
+/** How long to wait for an extended queue before accepting that there is nothing more to play. */
+private const val ENDLESS_CONTINUE_TIMEOUT_MS = 15_000L
 
 internal class MediaServiceHandlerImpl(
     private val dataStoreManager: DataStoreManager,
@@ -202,6 +235,15 @@ internal class MediaServiceHandlerImpl(
     private var normalizeVolume = false
 
     private var watchTimeList: ArrayList<Float> = arrayListOf()
+
+    /** Track already counted for the play in progress. Cleared on every transition. */
+    private var countedPlayVideoId: String? = null
+
+    /** In-flight prefetch of the next track's stream. At most one, cancelled on every transition. */
+    private var prefetchJob: Job? = null
+
+    /** In-flight attempt to extend an exhausted queue. At most one at a time. */
+    private var endlessContinueJob: Job? = null
 
     private var volumeNormalizationJob: Job? = null
 
@@ -517,10 +559,8 @@ internal class MediaServiceHandlerImpl(
                                 Logger.w(TAG, "getDataOfNowPlayingState: Updated thumbs $it")
                             }
                         }
-                        songRepository.updateSongInLibrary(now(), songEntity.videoId).singleOrNull().let {
-                            Logger.w(TAG, "getDataOfNowPlayingState: $it")
-                        }
-                        songRepository.updateListenCount(songEntity.videoId)
+                        // Records no play: this runs the instant a track becomes current, which is
+                        // not listening to it. See [mayBeRecordPlay].
                         Logger.w(TAG, "getDataOfNowPlayingState: $songEntity")
                         Logger.w(TAG, "getDataOfNowPlayingState: $track")
                         _nowPlayingState.update {
@@ -1189,7 +1229,15 @@ internal class MediaServiceHandlerImpl(
         // Separate local and remote data
         // Local Add Prefix to PlaylistID to differentiate between local and remote
         // Local: LC-PlaylistID
-        val playlistId = _queueData.value.data.playlistId ?: return
+        val playlistId = _queueData.value.data.playlistId
+        if (playlistId == null) {
+            // Local shelves queue tracks without a playlist id, so there is no page to ask for. That
+            // is not the same as having nowhere to go: a radio seeded from the last track is exactly
+            // what the endless queue is for, and returning here is why Play it again, Recently played
+            // and Most played all stopped dead at the end instead of continuing.
+            if (endlessQueueEnabled) startEndlessRadio()
+            return
+        }
         Logger.w("Check loadMore", playlistId.toString())
         val continuation = _queueData.value.data.continuation
         Logger.w("Check loadMore", continuation.toString())
@@ -1418,6 +1466,7 @@ internal class MediaServiceHandlerImpl(
                                             data =
                                                 it.data.copy(
                                                     playlistId = radioId,
+                                                    isRecommendation = true,
                                                 ),
                                             queueState = QueueData.StateSource.STATE_INITIALIZED,
                                         )
@@ -1431,20 +1480,38 @@ internal class MediaServiceHandlerImpl(
                 }
             }
         } else if (endlessQueueEnabled) {
-            Logger.w(TAG, "loadMore: Endless Queue")
-            val lastTrack =
-                queueData.value.data.listTracks
-                    .lastOrNull() ?: return
-            _queueData.update {
-                it.copy(
-                    queueState = QueueData.StateSource.STATE_INITIALIZED,
-                    data = it.data.copy(playlistId = "RDAMVM${lastTrack.videoId}"),
-                )
-            }
-            reorderShuffledQueue(player.getCurrentMediaTimeLine())
-            Logger.d("Check loadMore", "queueData: ${queueData.value}")
-            getRelated(lastTrack.videoId)
+            startEndlessRadio()
         }
+    }
+
+    /**
+     * Seeds a radio from the last track in the queue and keeps pulling related songs from it.
+     *
+     * Shared by both ways a queue can run out: one that paged to its end, and one that never had a
+     * playlist to page through at all.
+     */
+    private fun startEndlessRadio() {
+        Logger.w(TAG, "loadMore: Endless Queue")
+        val lastTrack =
+            queueData.value.data.listTracks
+                .lastOrNull() ?: return
+        val radioId = "RDAMVM${lastTrack.videoId}"
+        if (radioId == queueData.value.data.playlistId) {
+            Logger.w(TAG, "loadMore: Already in radio mode")
+            return
+        }
+        _queueData.update {
+            it.copy(
+                queueState = QueueData.StateSource.STATE_INITIALIZED,
+                data =
+                    it.data.copy(
+                        playlistId = radioId,
+                        isRecommendation = true,
+                    ),
+            )
+        }
+        reorderShuffledQueue(player.getCurrentMediaTimeLine())
+        getRelated(lastTrack.videoId)
     }
 
     override fun getRelated(videoId: String) {
@@ -2378,6 +2445,9 @@ internal class MediaServiceHandlerImpl(
 
             PlayerConstants.STATE_ENDED -> {
                 _simpleMediaState.value = SimpleMediaState.Ended
+                // The last track of a queue ends without a transition, so it would never count.
+                nowPlayingState.value.songEntity?.let { mayBeRecordPlay(it, current) }
+                mayBeContinueEndlessQueue()
                 Logger.d(TAG, "onPlaybackStateChanged: Ended")
             }
 
@@ -2402,6 +2472,10 @@ internal class MediaServiceHandlerImpl(
             nowPlayingState.value.songEntity?.let { updateDiscordRpc(it) }
         } else {
             stopProgressUpdate()
+            // Pausing is the third way a listen ends, alongside a transition and the end of a queue.
+            // Playing one song and stopping is an ordinary session, and without this it counted for
+            // nothing: the track never moved on, so nothing else here would ever record it.
+            nowPlayingState.value.songEntity?.let { mayBeRecordPlay(it, player.currentPosition) }
             mayBeSaveRecentSong()
             mayBeSavePlaybackState()
             if (discordRPC?.isRpcRunning() == true) {
@@ -2426,9 +2500,12 @@ internal class MediaServiceHandlerImpl(
         Logger.w(TAG, "Checking current state before transition ${simpleMediaState.value}")
         val lastPlayed = nowPlayingState.value.songEntity
         val currentState = simpleMediaState.value
-        if (currentState is SimpleMediaState.Progress && lastPlayed != null && lastPlayed.durationSeconds > 0) {
-            mayBeTrackingListeningLocal(lastPlayed, currentState.progress)
+        if (currentState is SimpleMediaState.Progress && lastPlayed != null) {
+            mayBeRecordPlay(lastPlayed, currentState.progress)
         }
+        // Cleared after the outgoing track has had its chance, so the incoming one starts
+        // unclaimed and repeat-one can count the same id again.
+        countedPlayVideoId = null
         Logger.w(TAG, "Smooth Switching Transition Current Position: ${player.currentPosition}")
         mayBeNormalizeVolume()
         Logger.w(TAG, "REASON onMediaItemTransition: $reason")
@@ -2462,7 +2539,18 @@ internal class MediaServiceHandlerImpl(
                 loadMore()
             }
         }
+        // Extended while the last track is still playing rather than after it ends. Waiting for the
+        // end means a stop and a restart, which is heard as a gap, leaves the skip button with
+        // nothing to move to, and leaves Up next with nothing to name. Doing it here means the
+        // recommendations are already queued by the time they are needed.
+        if (endlessQueueEnabled && !player.hasNextMediaItem()) {
+            Logger.w(TAG, "endless: last track reached, extending ahead")
+            loadMore()
+        }
         updateNextPreviousTrackAvailability()
+        // After the queue has settled, so the item being fetched is the one that follows the track
+        // now playing rather than the one that followed the last.
+        mayBePrefetchNextStream()
         updateNotification()
         if (player.currentMediaItemIndex == 0) {
             resetCrossfade()
@@ -2470,22 +2558,130 @@ internal class MediaServiceHandlerImpl(
         mayBeSaveRecentSong()
     }
 
-    private fun mayBeTrackingListeningLocal(
+    /**
+     * Extends a queue that has just run out, and keeps playing.
+     *
+     * The endless queue only ever grew from [onMediaItemTransition], and the last track of a queue
+     * ends without a transition: nothing moves on from it. So the one moment the feature exists for,
+     * the end of the queue, was the one moment it never ran, and playback stopped instead. Skip did
+     * nothing there for the same reason, because there was genuinely no next item to move to.
+     *
+     * Loading is not enough on its own. By the time the tracks arrive the player has already finished
+     * and will not start them by itself, so this waits for the queue to actually grow and then moves
+     * on to what arrived. If nothing arrives it gives up quietly and leaves playback stopped, which
+     * is the honest outcome when there is nothing more to play.
+     */
+    private fun mayBeContinueEndlessQueue() {
+        if (!endlessQueueEnabled) return
+        if (queueData.value.queueState != QueueData.StateSource.STATE_INITIALIZED) return
+        if (endlessContinueJob?.isActive == true) return
+        val sizeBefore = queueData.value.data.listTracks.size
+        endlessContinueJob =
+            coroutineScope.launch {
+                Logger.w(TAG, "endless: queue ran out, extending from $sizeBefore")
+                withContext(Dispatchers.Main) { loadMore() }
+                val grew =
+                    withTimeoutOrNull(ENDLESS_CONTINUE_TIMEOUT_MS) {
+                        queueData.first { it.data.listTracks.size > sizeBefore }
+                    }
+                if (grew == null) {
+                    Logger.w(TAG, "endless: nothing more to play")
+                    return@launch
+                }
+                withContext(Dispatchers.Main) {
+                    if (player.hasNextMediaItem()) {
+                        Logger.w(TAG, "endless: continuing into recommendations")
+                        player.seekToNext()
+                        player.play()
+                    }
+                }
+            }
+    }
+
+    /**
+     * Resolves the next track's stream while the current one is still playing.
+     *
+     * Pressing next otherwise blocks: the resolver runs the lookup inside runBlocking on the loading
+     * thread, so the network round trip happens between the press and the first sound. Resolving
+     * early puts the url in the store the resolver reads first, and the skip becomes a cache hit.
+     *
+     * Deliberately cheap to abandon. One job at a time, cancelled on every transition, so holding
+     * next down queues nothing up. The delay hands the current track the bandwidth it needs to build
+     * its own buffer first, and doubles as a debounce: skipping through a queue cancels each
+     * prefetch before it starts, and only the track someone settles on is ever fetched.
+     *
+     * Does nothing when a live url is already stored, which is the common case for a track played
+     * recently, and nothing at the end of a queue.
+     */
+    private fun mayBePrefetchNextStream() {
+        prefetchJob?.cancel()
+        val nextItem = player.getMediaItemAt(player.currentMediaItemIndex + 1) ?: return
+        val mediaId = nextItem.mediaId
+        if (mediaId.isBlank()) return
+        val isVideo = nextItem.isVideo()
+        val videoId = if (isVideo) mediaId.removePrefix(MERGING_DATA_TYPE.VIDEO) else mediaId
+        if (videoId.isBlank()) return
+        prefetchJob =
+            backgroundScope.launch {
+                delay(PREFETCH_DELAY_MS)
+                val stored = streamRepository.getNewFormat(mediaId).lastOrNull()
+                val storedUrl = if (isVideo) stored?.videoUrl else stored?.audioUrl
+                if (stored != null && storedUrl != null && stored.expiredTime > now()) {
+                    Logger.d(TAG, "prefetch: $videoId already resolved")
+                    return@launch
+                }
+                Logger.d(TAG, "prefetch: resolving $videoId")
+                streamRepository
+                    .getStream(
+                        dataStoreManager,
+                        videoId,
+                        isDownloading = false,
+                        isVideo = isVideo,
+                    ).lastOrNull()
+            }
+    }
+
+    /**
+     * Records a finished listen, if it lasted long enough to count as one.
+     *
+     * The single definition of a play: the listen counter behind Most played, the library timestamp
+     * behind Recently played and the analytics event are written together here or not at all, so the
+     * screens built on them agree.
+     *
+     * Runs on the way out of a track, never on the way in, so skipping through a queue counts
+     * nothing. Only the analytics event honours the local tracking setting; the counter and the
+     * timestamp are ordinary library state that Home and the Auto browse tree read. A track with no
+     * known duration counts on elapsed time instead of a fraction, since duration is often 0.
+     */
+    private fun mayBeRecordPlay(
         song: SongEntity,
-        currentPositionMillis: Long,
+        listenedMillis: Long,
     ) {
+        // Claimed synchronously, before launching: both callers run on the player's callback
+        // thread, so this is what stops a track counting twice when a transition and STATE_ENDED
+        // land on the same one.
+        if (countedPlayVideoId == song.videoId) return
+        val durationMillis = song.durationSeconds * 1000L
+        val qualified =
+            if (durationMillis > 0) {
+                listenedMillis * 100 >= durationMillis * MIN_LISTEN_PERCENT
+            } else {
+                listenedMillis >= MIN_LISTEN_MILLIS_UNKNOWN_DURATION
+            }
+        if (!qualified) {
+            Logger.d(TAG, "Not enough listening time for ${song.title}, not counting a play")
+            return
+        }
+        countedPlayVideoId = song.videoId
+        Logger.d(TAG, "Counting a play for ${song.title} after $listenedMillis ms")
         coroutineScope.launch {
-            val trackingEnabled = dataStoreManager.localTrackingEnabled.first() == TRUE
-            if (!trackingEnabled) {
+            songRepository.updateSongInLibrary(now(), song.videoId).singleOrNull().let {
+                Logger.w(TAG, "mayBeRecordPlay: library timestamp $it")
+            }
+            songRepository.updateListenCount(song.videoId)
+            if (dataStoreManager.localTrackingEnabled.first() != TRUE) {
                 return@launch
             }
-            val percent = (currentPositionMillis / (song.durationSeconds * 1000f))
-            Logger.w(TAG, "${song.title} - $currentPositionMillis ms listened, duration: ${song.durationSeconds * 1000} ms, percent: $percent")
-            if (percent < 0.2f) {
-                Logger.d(TAG, "Not enough listening time for ${song.title}, skipping tracking")
-                return@launch
-            }
-            Logger.d(TAG, "Tracking listening for ${song.title} at position $currentPositionMillis ms")
             analyticsRepository
                 .insertPlaybackEvent(
                     videoId = song.videoId,
@@ -2493,10 +2689,11 @@ internal class MediaServiceHandlerImpl(
                     albumBrowseId = song.albumId,
                     durationSecond = song.durationSeconds.toLong(),
                     listenedSecond =
-                        if (percent >= 0.8f) {
+                        // Past the near-complete mark counts as the whole track.
+                        if (durationMillis > 0 && listenedMillis * 100 >= durationMillis * NEAR_COMPLETE_PERCENT) {
                             song.durationSeconds.toLong()
                         } else {
-                            (currentPositionMillis / 1000)
+                            listenedMillis / 1000
                         },
                 ).collect {
                     Logger.d(TAG, "Inserted playback event for ${song.title}: $it")

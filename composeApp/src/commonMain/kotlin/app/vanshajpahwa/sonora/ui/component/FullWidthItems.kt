@@ -101,6 +101,8 @@ import app.vanshajpahwa.sonora.resources.podcasts
 import app.vanshajpahwa.sonora.resources.radio
 import app.vanshajpahwa.sonora.resources.you
 import kotlin.math.roundToInt
+import app.vanshajpahwa.sonora.viewModel.DurationBackfill
+import androidx.compose.runtime.LaunchedEffect
 
 /**
  * This is the song item in the playlist or other places.
@@ -117,6 +119,14 @@ fun SongFullWidthItems(
     onAddToQueue: ((videoId: String) -> Unit)? = null,
     modifier: Modifier,
     rightView: @Composable (() -> Unit)? = null,
+    /**
+     * Show the track's running time before [rightView].
+     *
+     * Lives here rather than being passed in as a rightView by each screen, because three screens
+     * wanting the same thing is how the detail pages ended up with three copies of an action row
+     * that then drifted apart.
+     */
+    showDuration: Boolean = false,
     forceDark: Boolean = LocalForceDarkText.current,
     // Multi select. Defaulted off so the four screens that have not adopted it yet compile and
     // behave exactly as before.
@@ -319,12 +329,45 @@ fun SongFullWidthItems(
                                         .clip(SonoraShapes.Media),
                             )
                         } else {
-                            Text(
-                                text = (index + 1).toString(),
-                                color = contentColor,
-                                style = typo().titleMedium,
-                                modifier = Modifier.align(Alignment.Center),
+                            // Number over the artwork, not instead of it.
+                            //
+                            // The slot is artwork sized whatever goes in it, so a bare number left a
+                            // column of empty squares down the page. Drawing the cover underneath
+                            // fills the box it was always going to occupy, and the scrim is what
+                            // keeps the digit readable on a pale sleeve.
+                            val thumb = track?.thumbnails?.lastOrNull()?.url ?: songEntity?.thumbnails
+                            AsyncImage(
+                                model =
+                                    ImageRequest
+                                        .Builder(LocalPlatformContext.current)
+                                        .data(thumb)
+                                        .diskCachePolicy(CachePolicy.ENABLED)
+                                        .diskCacheKey(thumb)
+                                        .crossfade(true)
+                                        .build(),
+                                placeholder = rememberHolderPainter(),
+                                error = rememberHolderPainter(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .clip(SonoraShapes.Media),
                             )
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .clip(SonoraShapes.Media)
+                                        .background(Color.Black.copy(alpha = 0.45f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = (index + 1).toString(),
+                                    color = Color.White,
+                                    style = typo().titleMedium,
+                                )
+                            }
                         }
                     }
                 }
@@ -397,6 +440,48 @@ fun SongFullWidthItems(
                                         iterations = Int.MAX_VALUE,
                                         animationMode = MarqueeAnimationMode.Immediately,
                                     ).focusable(),
+                        )
+                    }
+                }
+                if (showDuration) {
+                    // YouTube usually sends a display string; durationSeconds covers the rows that
+                    // arrive without one.
+                    // Only trust the display string when it actually looks like one. Radio and
+                    // related tracks arrive with duration set to a bare count of seconds, which was
+                    // shown verbatim, so a queue read 160 where every other list read 2:40.
+                    val displayDuration = track?.duration?.takeIf { it.isNotBlank() && it.contains(':') }
+                    val totalSeconds =
+                        (track?.durationSeconds ?: songEntity?.durationSeconds)?.takeIf { it > 0 }
+                            ?: track
+                                ?.duration
+                                ?.takeIf { it.isNotBlank() && !it.contains(':') }
+                                ?.trim()
+                                ?.toIntOrNull()
+                                ?.takeIf { it > 0 }
+                    val durationLabel =
+                        displayDuration
+                            ?: totalSeconds?.let { total ->
+                                val mm = total / 60
+                                val ss = (total % 60).toString().padStart(2, '0')
+                                "$mm:$ss"
+                            }
+                    // Ask for the ones nobody stored a duration for.
+                    //
+                    // This sits inside the row on purpose: a lazy list composes only what is on
+                    // screen, so scrolling past hundreds of rows asks for the handful actually
+                    // seen. DurationBackfill drops repeats and caps how many run at once.
+                    val backfill = koinInject<DurationBackfill>()
+                    val needsDuration =
+                        if (durationLabel == null) track?.videoId ?: songEntity?.videoId else null
+                    LaunchedEffect(needsDuration) {
+                        needsDuration?.let { backfill.request(it) }
+                    }
+                    if (durationLabel != null) {
+                        Text(
+                            text = durationLabel,
+                            style = typo().bodySmall,
+                            color = subtitleColor,
+                            modifier = Modifier.padding(horizontal = 8.dp),
                         )
                     }
                 }
