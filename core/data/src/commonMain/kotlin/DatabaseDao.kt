@@ -549,6 +549,11 @@ interface DatabaseDao {
         offset: Int,
     ): List<AlbumEntity>
 
+    // Observed, not fetched once. A favourite made on an album page has to reach a Library screen
+    // that is already composed, and a suspend query cannot tell it anything after it returns.
+    @Query("SELECT * FROM album WHERE liked = 1 ORDER BY favoriteAt DESC")
+    fun getLikedAlbumsAsFlow(): Flow<List<AlbumEntity>>
+
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     suspend fun insertAlbum(album: AlbumEntity): Long
 
@@ -596,6 +601,9 @@ interface DatabaseDao {
         limit: Int,
         offset: Int,
     ): List<PlaylistEntity>
+
+    @Query("SELECT * FROM playlist WHERE liked = 1 ORDER BY favoriteAt DESC")
+    fun getLikedPlaylistsAsFlow(): Flow<List<PlaylistEntity>>
 
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     suspend fun insertPlaylist(playlist: PlaylistEntity)

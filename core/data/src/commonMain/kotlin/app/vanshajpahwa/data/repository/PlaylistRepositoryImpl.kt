@@ -63,13 +63,7 @@ internal class PlaylistRepositoryImpl(
         }.flowOn(Dispatchers.IO)
 
     override fun getLikedPlaylists(): Flow<List<PlaylistEntity>> =
-        flow {
-            emit(
-                getFullDataFromDB { limit, offset ->
-                    localDataSource.getLikedPlaylists(limit, offset)
-                },
-            )
-        }.flowOn(Dispatchers.IO)
+        localDataSource.getLikedPlaylistsAsFlow().flowOn(Dispatchers.IO)
 
     override suspend fun insertPlaylist(playlistEntity: PlaylistEntity) =
         withContext(Dispatchers.IO) { localDataSource.insertPlaylist(playlistEntity) }

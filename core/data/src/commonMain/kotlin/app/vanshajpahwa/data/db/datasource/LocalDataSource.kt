@@ -256,6 +256,8 @@ internal class LocalDataSource(
         offset,
     )
 
+    fun getLikedAlbumsAsFlow() = databaseDao.getLikedAlbumsAsFlow()
+
     suspend fun updateAlbumInLibrary(
         inLibrary: LocalDateTime,
         albumId: String,
@@ -288,6 +290,8 @@ internal class LocalDataSource(
         limit,
         offset,
     )
+
+    fun getLikedPlaylistsAsFlow() = databaseDao.getLikedPlaylistsAsFlow()
 
     suspend fun updatePlaylistInLibrary(
         inLibrary: LocalDateTime,

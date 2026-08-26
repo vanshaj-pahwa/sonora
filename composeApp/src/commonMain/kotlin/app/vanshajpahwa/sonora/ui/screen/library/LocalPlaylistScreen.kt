@@ -179,11 +179,12 @@ import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
-import app.vanshajpahwa.sonora.resources.album_length
+import app.vanshajpahwa.sonora.resources.n_song
 import app.vanshajpahwa.sonora.resources.baseline_downloaded
 import app.vanshajpahwa.sonora.resources.cancel
 import app.vanshajpahwa.sonora.resources.created_at
@@ -1111,10 +1112,10 @@ fun LocalPlaylistScreen(
                                 }
                                 Text(
                                     text =
-                                        stringResource(
-                                            Res.string.album_length,
-                                            (uiState.trackCount).toString(),
-                                            "",
+                                        pluralStringResource(
+                                            Res.plurals.n_song,
+                                            uiState.trackCount,
+                                            uiState.trackCount,
                                         ),
                                     color = Color.White,
                                     style = typo().bodyMedium,
