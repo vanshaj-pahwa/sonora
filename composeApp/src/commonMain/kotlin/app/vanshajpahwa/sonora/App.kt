@@ -674,58 +674,6 @@ fun App(
                 }
 
 
-                if (showNotificationPermissionDialog) {
-                    var doNotShowAgain by remember { mutableStateOf(false) }
-                    AlertDialog(
-                        onDismissRequest = {
-                            viewModel.dismissNotificationPermissionDialog(doNotShowAgain)
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    viewModel.dismissNotificationPermissionDialog(doNotShowAgain)
-                                },
-                            ) {
-                                Text(
-                                    stringResource(Res.string.yes),
-                                    style = typo().bodySmall,
-                                )
-                            }
-                        },
-                        title = {
-                            Text(
-                                stringResource(Res.string.notification),
-                                style = typo().labelSmall,
-                            )
-                        },
-                        text = {
-                            Column {
-                                Text(
-                                    stringResource(Res.string.this_app_needs_to_access_your_notification),
-                                    style = typo().bodySmall,
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier =
-                                        Modifier
-                                            .clickable { doNotShowAgain = !doNotShowAgain }
-                                            .fillMaxWidth(),
-                                ) {
-                                    Checkbox(
-                                        checked = doNotShowAgain,
-                                        onCheckedChange = { doNotShowAgain = it },
-                                    )
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(
-                                        stringResource(Res.string.do_not_show_again),
-                                        style = typo().bodySmall,
-                                    )
-                                }
-                            }
-                        },
-                    )
-                }
             },
         )
     }

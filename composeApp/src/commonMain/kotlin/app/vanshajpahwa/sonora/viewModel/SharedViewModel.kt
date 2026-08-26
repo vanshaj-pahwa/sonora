@@ -988,14 +988,8 @@ class SharedViewModel(
      * stops the network call at its single choke point, which covers all three callers: the
      * automatic check on startup, the manual button in Settings, and the desktop startup check.
      */
-    fun checkForUpdate() {
-        _isCheckingUpdate.value = false
-        _updateResponse.value = null
-        showedUpdateDialog = false
-    }
 
-    @Suppress("unused")
-    private fun checkForUpdateDisabled() {
+    fun checkForUpdate() {
         viewModelScope.launch {
             _isCheckingUpdate.value = true
             val updateChannel = dataStoreManager.updateChannel.first()
