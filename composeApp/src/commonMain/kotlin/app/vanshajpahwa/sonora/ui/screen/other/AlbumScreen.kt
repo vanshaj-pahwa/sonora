@@ -41,9 +41,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -81,11 +85,12 @@ import app.vanshajpahwa.sonora.extension.toImmersiveBackground
 import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.resources.Res
 import app.vanshajpahwa.sonora.resources.album
-import app.vanshajpahwa.sonora.resources.album_length
 import app.vanshajpahwa.sonora.resources.baseline_downloaded
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.downloading
-import app.vanshajpahwa.sonora.resources.other_version
+import app.vanshajpahwa.sonora.resources.n_song
+import app.vanshajpahwa.sonora.resources.search
+import app.vanshajpahwa.sonora.resources.you_might_also_like
 import app.vanshajpahwa.sonora.resources.year_and_category
 import app.vanshajpahwa.sonora.ui.component.CenterLoadingBox
 import app.vanshajpahwa.sonora.ui.component.ArtistChip
@@ -104,6 +109,8 @@ import app.vanshajpahwa.sonora.ui.component.liquidGlass
 import app.vanshajpahwa.sonora.ui.component.rememberHolderPainter
 import app.vanshajpahwa.sonora.ui.component.titleMarquee
 import app.vanshajpahwa.sonora.ui.icon.ArrowBackIosNew
+import app.vanshajpahwa.sonora.ui.icon.Close
+import app.vanshajpahwa.sonora.ui.icon.Search
 import app.vanshajpahwa.sonora.ui.icon.DownloadForOffline
 import app.vanshajpahwa.sonora.ui.icon.MoreVert
 import app.vanshajpahwa.sonora.ui.icon.Pause
@@ -141,6 +148,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -173,6 +181,20 @@ fun AlbumScreen(
 
     var showBottomSheet by rememberSaveable { mutableStateOf(false) }
     var albumBottomSheetShow by rememberSaveable { mutableStateOf(false) }
+    var showSearchBar by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val filteredTrack by remember(uiState.listTrack, query, showSearchBar) {
+        derivedStateOf {
+            if (query.isEmpty() || !showSearchBar) {
+                uiState.listTrack
+            } else {
+                uiState.listTrack.filter {
+                    it.title.contains(query, ignoreCase = true) ||
+                        it.artists?.joinToString(", ")?.contains(query, ignoreCase = true) == true
+                }
+            }
+        }
+    }
     var chosenSong: Track? by remember { mutableStateOf(null) }
 
     val composition by rememberLottieComposition {
@@ -397,273 +419,347 @@ fun AlbumScreen(
                                                     )
                                                 }
                                             }
-                                            if (isMobilePortrait) {
-                                                // Apple Music-style action row:
-                                                // [Shuffle][Play pill][Download] (cluster centered, all 48dp matching size)
-                                                val isThisPlaying =
-                                                    playingVideoId.isNotEmpty() &&
-                                                        playingPlaylistId == browseId.replaceFirst("VL", "")
-                                                DetailActionRow(
-                                                    isPlaying = isThisPlaying,
-                                                    playLabel = if (isThisPlaying) "Pause" else "Play",
-                                                    onPlayPause = {
-                                                        if (isThisPlaying) {
-                                                            sharedViewModel.onUIEvent(UIEvent.PlayPause)
-                                                        } else {
-                                                            uiState.listTrack.firstOrNull()?.let {
-                                                                viewModel.playTrack(it)
-                                                            }
-                                                        }
-                                                    },
-                                                    leading = {
-                                                        DetailCircleButton(
-                                                            icon = SonoraIcons.Shuffle,
-                                                            contentDescription = "Shuffle",
-                                                            onClick = { viewModel.shuffle() },
+                                            // Back button over the artwork, matching the playlist and artist
+                                            // headers. Sibling of the backdrop source, never a child of it.
+                                            Row(
+                                                modifier =
+                                                    Modifier
+                                                        .align(Alignment.TopStart)
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                        .windowInsetsPadding(WindowInsets.statusBars),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                if (glassOn) {
+                                                    LiquidGlassIconButton(
+                                                        backdrop = artworkBackdrop,
+                                                        imageVector = SonoraIcons.ArrowBackIosNew,
+                                                        modifier = Modifier.size(48.dp),
+                                                    ) {
+                                                        navController.navigateUp()
+                                                    }
+                                                } else {
+                                                    IconButton(
+                                                        onClick = { navController.navigateUp() },
+                                                        modifier = Modifier.size(48.dp),
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = SonoraIcons.ArrowBackIosNew,
+                                                            contentDescription = "Back",
+                                                            tint = Color.White,
+                                                            modifier = Modifier.size(20.dp),
                                                         )
-                                                    },
-                                                    trailing = {
-                                                        Box(
-                                                            modifier =
-                                                                Modifier
-                                                                    .size(48.dp)
-                                                                    .clip(CircleShape)
-                                                                    .background(Color.White.copy(alpha = 0.12f)),
-                                                            contentAlignment = Alignment.Center,
-                                                        ) {
-                                                            Crossfade(targetState = uiState.downloadState) { state ->
-                                                                when (state) {
-                                                                    DownloadState.STATE_DOWNLOADED -> {
-                                                                        Box(
-                                                                            modifier =
-                                                                                Modifier
-                                                                                    .fillMaxSize()
-                                                                                    .clickable {
-                                                                                        viewModel.makeToast(
-                                                                                            runBlocking {
-                                                                                                getString(Res.string.downloaded)
-                                                                                            },
-                                                                                        )
-                                                                                    },
-                                                                            contentAlignment = Alignment.Center,
-                                                                        ) {
-                                                                            Icon(
-                                                                                painter = painterResource(Res.drawable.baseline_downloaded),
-                                                                                tint = Color(0xFF00A0CB),
-                                                                                contentDescription = "",
-                                                                                modifier = Modifier.size(22.dp),
-                                                                            )
-                                                                        }
-                                                                    }
-
-                                                                    DownloadState.STATE_DOWNLOADING -> {
-                                                                        Box(
-                                                                            modifier =
-                                                                                Modifier
-                                                                                    .fillMaxSize()
-                                                                                    .clickable {
-                                                                                        viewModel.makeToast(
-                                                                                            runBlocking {
-                                                                                                getString(Res.string.downloading)
-                                                                                            },
-                                                                                        )
-                                                                                    },
-                                                                            contentAlignment = Alignment.Center,
-                                                                        ) {
-                                                                            Image(
-                                                                                painter =
-                                                                                    rememberLottiePainter(
-                                                                                        composition = composition,
-                                                                                        iterations = Compottie.IterateForever,
-                                                                                    ),
-                                                                                contentDescription = "Lottie animation",
-                                                                                modifier = Modifier.size(28.dp),
-                                                                            )
-                                                                        }
-                                                                    }
-
-                                                                    else -> {
-                                                                        Box(
-                                                                            modifier =
-                                                                                Modifier
-                                                                                    .fillMaxSize()
-                                                                                    .clickable { viewModel.downloadFullAlbum() },
-                                                                            contentAlignment = Alignment.Center,
-                                                                        ) {
-                                                                            Icon(
-                                                                                imageVector = SonoraIcons.DownloadForOffline,
-                                                                                tint = Color.White,
-                                                                                contentDescription = "Download",
-                                                                                modifier = Modifier.size(22.dp),
-                                                                            )
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                )
-                                            } else {
+                                                    }
+                                                }
+                                                Spacer(Modifier.weight(1f))
                                                 Row(
                                                     modifier =
-                                                        Modifier.fillMaxWidth(),
+                                                        Modifier
+                                                            .height(48.dp)
+                                                            .then(
+                                                                // White glyphs on album art need a floor under
+                                                                // them, so the non-glass fallback is a scrim
+                                                                // rather than nothing.
+                                                                if (glassOn) {
+                                                                    Modifier.liquidGlass(artworkBackdrop, SonoraShapes.Media)
+                                                                } else {
+                                                                    Modifier
+                                                                        .clip(SonoraShapes.Media)
+                                                                        .background(Color.Black.copy(alpha = 0.35f))
+                                                                },
+                                                            ),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                 ) {
-                                                    Crossfade(
-                                                        playingVideoId.isNotEmpty() &&
-                                                            playingPlaylistId == browseId.replaceFirst("VL", ""),
-                                                    ) { isThisPlaying ->
-                                                        if (isThisPlaying) {
-                                                            RippleIconButton(
-                                                                imageVector = SonoraIcons.PauseCircle,
-                                                                fillMaxSize = true,
-                                                                tint = seed,
-                                                                modifier = Modifier.size(48.dp),
-                                                            ) {
-                                                                sharedViewModel.onUIEvent(UIEvent.PlayPause)
-                                                            }
-                                                        } else {
-                                                            RippleIconButton(
-                                                                imageVector = SonoraIcons.PlayCircle,
-                                                                fillMaxSize = true,
-                                                                tint = seed,
-                                                                modifier = Modifier.size(48.dp),
-                                                            ) {
-                                                                viewModel.playTrack(uiState.listTrack.firstOrNull() ?: return@RippleIconButton)
-                                                            }
-                                                        }
-                                                    }
-                                                    Spacer(modifier = Modifier.size(5.dp))
-                                                    Crossfade(targetState = uiState.downloadState) {
-                                                        when (it) {
-                                                            DownloadState.STATE_DOWNLOADED -> {
-                                                                Box(
-                                                                    modifier =
-                                                                        Modifier
-                                                                            .size(36.dp)
-                                                                            .clip(
-                                                                                CircleShape,
-                                                                            ).clickable {
-                                                                                viewModel.makeToast(
-                                                                                    runBlocking {
-                                                                                        getString(Res.string.downloaded)
-                                                                                    },
-                                                                                )
-                                                                            },
-                                                                ) {
-                                                                    Icon(
-                                                                        painter = painterResource(Res.drawable.baseline_downloaded),
-                                                                        tint = Color(0xFF00A0CB),
-                                                                        contentDescription = "",
-                                                                        modifier =
-                                                                            Modifier
-                                                                                .size(36.dp)
-                                                                                .padding(2.dp),
-                                                                    )
-                                                                }
-                                                            }
-
-                                                            DownloadState.STATE_DOWNLOADING -> {
-                                                                Box(
-                                                                    modifier =
-                                                                        Modifier
-                                                                            .size(36.dp)
-                                                                            .clip(
-                                                                                CircleShape,
-                                                                            ).clickable {
-                                                                                viewModel.makeToast(
-                                                                                    runBlocking {
-                                                                                        getString(Res.string.downloading)
-                                                                                    },
-                                                                                )
-                                                                            },
-                                                                ) {
-                                                                    Image(
-                                                                        painter =
-                                                                            rememberLottiePainter(
-                                                                                composition = composition,
-                                                                                iterations = Compottie.IterateForever,
-                                                                            ),
-                                                                        contentDescription = "Lottie animation",
-                                                                        modifier = Modifier.fillMaxSize(),
-                                                                    )
-                                                                }
-                                                            }
-
-                                                            else -> {
-                                                                RippleIconButton(
-                                                                    fillMaxSize = true,
-                                                                    imageVector = SonoraIcons.DownloadForOffline,
-                                                                    modifier = Modifier.size(36.dp),
-                                                                ) {
-                                                                    viewModel.downloadFullAlbum()
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    Spacer(modifier = Modifier.size(5.dp))
-                                                    HeartCheckBox(
-                                                        size = 36,
-                                                        checked = uiState.liked,
-                                                        onStateChange = {
-                                                            viewModel.setAlbumLike()
-                                                        },
-                                                    )
-                                                    Spacer(Modifier.weight(1f))
-                                                    Spacer(Modifier.size(5.dp))
-                                                    RippleIconButton(
-                                                        modifier =
-                                                            Modifier.size(36.dp),
-                                                        imageVector = SonoraIcons.Shuffle,
-                                                        fillMaxSize = true,
+                                                    Box(
+                                                        modifier = Modifier.size(48.dp),
+                                                        contentAlignment = Alignment.Center,
                                                     ) {
-                                                        viewModel.shuffle()
+                                                        HeartCheckBox(
+                                                            size = 28,
+                                                            checked = uiState.liked,
+                                                            onStateChange = { viewModel.setAlbumLike() },
+                                                        )
+                                                    }
+                                                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
+                                                        Icon(SonoraIcons.Search, null, tint = Color.White)
+                                                    }
+                                                    IconButton(onClick = { albumBottomSheetShow = true }) {
+                                                        Icon(
+                                                            imageVector = SonoraIcons.MoreVert,
+                                                            contentDescription = "More",
+                                                            tint = Color.White,
+                                                        )
                                                     }
                                                 }
                                             }
-                                            // Nothing to say means nothing on screen. A row reading
-                                            // "No description" spends a line reporting that it has
-                                            // nothing to report.
-                                            val albumDescription = uiState.description?.takeIf { it.isNotBlank() }
-                                            if (albumDescription != null) {
-                                            DescriptionView(
-                                                text = albumDescription,
-                                                onTimeClicked = { raw ->
-                                                    // Don't handle time click
+                                        }
+                                        if (isMobilePortrait) {
+                                            // Apple Music-style action row:
+                                            // [Shuffle][Play pill][Download] (cluster centered, all 48dp matching size)
+                                            val isThisPlaying =
+                                                playingVideoId.isNotEmpty() &&
+                                                    playingPlaylistId == browseId.replaceFirst("VL", "")
+                                            DetailActionRow(
+                                                isPlaying = isThisPlaying,
+                                                playLabel = if (isThisPlaying) "Pause" else "Play",
+                                                onPlayPause = {
+                                                    if (isThisPlaying) {
+                                                        sharedViewModel.onUIEvent(UIEvent.PlayPause)
+                                                    } else {
+                                                        uiState.listTrack.firstOrNull()?.let {
+                                                            viewModel.playTrack(it)
+                                                        }
+                                                    }
                                                 },
-                                                onURLClicked = { url ->
-                                                    uriHandler.openUri(
-                                                        url,
+                                                leading = {
+                                                    DetailCircleButton(
+                                                        icon = SonoraIcons.Shuffle,
+                                                        contentDescription = "Shuffle",
+                                                        onClick = { viewModel.shuffle() },
                                                     )
                                                 },
-                                                modifier = Modifier.padding(vertical = 8.dp),
+                                                trailing = {
+                                                    Box(
+                                                        modifier =
+                                                            Modifier
+                                                                .size(48.dp)
+                                                                .clip(CircleShape)
+                                                                .background(Color.White.copy(alpha = 0.12f)),
+                                                        contentAlignment = Alignment.Center,
+                                                    ) {
+                                                        Crossfade(targetState = uiState.downloadState) { state ->
+                                                            when (state) {
+                                                                DownloadState.STATE_DOWNLOADED -> {
+                                                                    Box(
+                                                                        modifier =
+                                                                            Modifier
+                                                                                .fillMaxSize()
+                                                                                .clickable {
+                                                                                    viewModel.makeToast(
+                                                                                        runBlocking {
+                                                                                            getString(Res.string.downloaded)
+                                                                                        },
+                                                                                    )
+                                                                                },
+                                                                        contentAlignment = Alignment.Center,
+                                                                    ) {
+                                                                        Icon(
+                                                                            painter = painterResource(Res.drawable.baseline_downloaded),
+                                                                            tint = Color(0xFF00A0CB),
+                                                                            contentDescription = "",
+                                                                            modifier = Modifier.size(22.dp),
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                DownloadState.STATE_DOWNLOADING -> {
+                                                                    Box(
+                                                                        modifier =
+                                                                            Modifier
+                                                                                .fillMaxSize()
+                                                                                .clickable {
+                                                                                    viewModel.makeToast(
+                                                                                        runBlocking {
+                                                                                            getString(Res.string.downloading)
+                                                                                        },
+                                                                                    )
+                                                                                },
+                                                                        contentAlignment = Alignment.Center,
+                                                                    ) {
+                                                                        Image(
+                                                                            painter =
+                                                                                rememberLottiePainter(
+                                                                                    composition = composition,
+                                                                                    iterations = Compottie.IterateForever,
+                                                                                ),
+                                                                            contentDescription = "Lottie animation",
+                                                                            modifier = Modifier.size(28.dp),
+                                                                        )
+                                                                    }
+                                                                }
+
+                                                                else -> {
+                                                                    Box(
+                                                                        modifier =
+                                                                            Modifier
+                                                                                .fillMaxSize()
+                                                                                .clickable { viewModel.downloadFullAlbum() },
+                                                                        contentAlignment = Alignment.Center,
+                                                                    ) {
+                                                                        Icon(
+                                                                            imageVector = SonoraIcons.DownloadForOffline,
+                                                                            tint = Color.White,
+                                                                            contentDescription = "Download",
+                                                                            modifier = Modifier.size(22.dp),
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                             )
+                                        } else {
+                                            Row(
+                                                modifier =
+                                                    Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Crossfade(
+                                                    playingVideoId.isNotEmpty() &&
+                                                        playingPlaylistId == browseId.replaceFirst("VL", ""),
+                                                ) { isThisPlaying ->
+                                                    if (isThisPlaying) {
+                                                        RippleIconButton(
+                                                            imageVector = SonoraIcons.PauseCircle,
+                                                            fillMaxSize = true,
+                                                            tint = seed,
+                                                            modifier = Modifier.size(48.dp),
+                                                        ) {
+                                                            sharedViewModel.onUIEvent(UIEvent.PlayPause)
+                                                        }
+                                                    } else {
+                                                        RippleIconButton(
+                                                            imageVector = SonoraIcons.PlayCircle,
+                                                            fillMaxSize = true,
+                                                            tint = seed,
+                                                            modifier = Modifier.size(48.dp),
+                                                        ) {
+                                                            viewModel.playTrack(uiState.listTrack.firstOrNull() ?: return@RippleIconButton)
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.size(5.dp))
+                                                Crossfade(targetState = uiState.downloadState) {
+                                                    when (it) {
+                                                        DownloadState.STATE_DOWNLOADED -> {
+                                                            Box(
+                                                                modifier =
+                                                                    Modifier
+                                                                        .size(36.dp)
+                                                                        .clip(
+                                                                            CircleShape,
+                                                                        ).clickable {
+                                                                            viewModel.makeToast(
+                                                                                runBlocking {
+                                                                                    getString(Res.string.downloaded)
+                                                                                },
+                                                                            )
+                                                                        },
+                                                            ) {
+                                                                Icon(
+                                                                    painter = painterResource(Res.drawable.baseline_downloaded),
+                                                                    tint = Color(0xFF00A0CB),
+                                                                    contentDescription = "",
+                                                                    modifier =
+                                                                        Modifier
+                                                                            .size(36.dp)
+                                                                            .padding(2.dp),
+                                                                )
+                                                            }
+                                                        }
+
+                                                        DownloadState.STATE_DOWNLOADING -> {
+                                                            Box(
+                                                                modifier =
+                                                                    Modifier
+                                                                        .size(36.dp)
+                                                                        .clip(
+                                                                            CircleShape,
+                                                                        ).clickable {
+                                                                            viewModel.makeToast(
+                                                                                runBlocking {
+                                                                                    getString(Res.string.downloading)
+                                                                                },
+                                                                            )
+                                                                        },
+                                                            ) {
+                                                                Image(
+                                                                    painter =
+                                                                        rememberLottiePainter(
+                                                                            composition = composition,
+                                                                            iterations = Compottie.IterateForever,
+                                                                        ),
+                                                                    contentDescription = "Lottie animation",
+                                                                    modifier = Modifier.fillMaxSize(),
+                                                                )
+                                                            }
+                                                        }
+
+                                                        else -> {
+                                                            RippleIconButton(
+                                                                fillMaxSize = true,
+                                                                imageVector = SonoraIcons.DownloadForOffline,
+                                                                modifier = Modifier.size(36.dp),
+                                                            ) {
+                                                                viewModel.downloadFullAlbum()
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                Spacer(modifier = Modifier.size(5.dp))
+                                                HeartCheckBox(
+                                                    size = 36,
+                                                    checked = uiState.liked,
+                                                    onStateChange = {
+                                                        viewModel.setAlbumLike()
+                                                    },
+                                                )
+                                                Spacer(Modifier.weight(1f))
+                                                Spacer(Modifier.size(5.dp))
+                                                RippleIconButton(
+                                                    modifier =
+                                                        Modifier.size(36.dp),
+                                                    imageVector = SonoraIcons.Shuffle,
+                                                    fillMaxSize = true,
+                                                ) {
+                                                    viewModel.shuffle()
+                                                }
                                             }
-                                            Text(
-                                                text =
-                                                    stringResource(
-                                                        Res.string.album_length,
-                                                        (uiState.trackCount).toString(),
-                                                    ) +
-                                                        // Only joined when there is something to
-                                                        // join to. Passing an empty second value
-                                                        // left the line ending in a stray separator.
-                                                        uiState.length.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(),
-                                                color = Color.White,
-                                                style = typo().bodyMedium,
-                                                modifier = Modifier.padding(vertical = 8.dp),
-                                            )
                                         }
+                                        // Nothing to say means nothing on screen. A row reading
+                                        // "No description" spends a line reporting that it has
+                                        // nothing to report.
+                                        val albumDescription = uiState.description?.takeIf { it.isNotBlank() }
+                                        if (albumDescription != null) {
+                                        DescriptionView(
+                                            text = albumDescription,
+                                            onTimeClicked = { raw ->
+                                                // Don't handle time click
+                                            },
+                                            onURLClicked = { url ->
+                                                uriHandler.openUri(
+                                                    url,
+                                                )
+                                            },
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                        )
+                                        }
+                                        Text(
+                                            text =
+                                                pluralStringResource(
+                                                    Res.plurals.n_song,
+                                                    uiState.trackCount,
+                                                    uiState.trackCount,
+                                                ) +
+                                                    // Only joined when there is something to
+                                                    // join to. Passing an empty second value
+                                                    // left the line ending in a stray separator.
+                                                    uiState.length.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(),
+                                            color = Color.White,
+                                            style = typo().bodyMedium,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                        )
                                     }
                                 }
                             }
                         }
                     }
-                    items(count = uiState.trackCount, key = { index ->
-                        val item = uiState.listTrack.getOrNull(index)
+                    items(count = filteredTrack.size, key = { index ->
+                        val item = filteredTrack.getOrNull(index)
                         item?.videoId + "item_$index"
                     }) { index ->
-                        val item = uiState.listTrack.getOrNull(index)
+                        val item = filteredTrack.getOrNull(index)
                         if (item != null) {
                             Column(modifier = Modifier.animateItem()) {
                                 SongFullWidthItems(
@@ -686,7 +782,7 @@ fun AlbumScreen(
                                     showDuration = true,
                                     modifier = Modifier,
                                 )
-                                if (isMobilePortrait && index < uiState.trackCount - 1) {
+                                if (isMobilePortrait && index < filteredTrack.size - 1) {
                                     HorizontalDivider(
                                         modifier = Modifier.padding(start = 72.dp, end = 16.dp),
                                         thickness = 0.5.dp,
@@ -701,7 +797,11 @@ fun AlbumScreen(
                             Column {
                                 Spacer(Modifier.height(10.dp))
                                 Text(
-                                    text = stringResource(Res.string.other_version),
+                                    // YouTube's own name for the shelf. It is only sometimes
+                                    // other versions of this album, so the response decides.
+                                    text =
+                                        uiState.otherVersionTitle
+                                            ?: stringResource(Res.string.you_might_also_like),
                                     style = typo().labelMedium,
                                     modifier =
                                         Modifier.padding(
@@ -788,6 +888,83 @@ fun AlbumScreen(
                                 Modifier.angledGradientBackground(uiState.colors, 90f)
                             },
                     )
+                }
+                AnimatedVisibility(
+                    visible = showSearchBar,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically(),
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (isMobilePortrait) {
+                                    Modifier.hazeEffect(hazeState) {
+                                        blurEnabled = true
+                                        blurRadius = 24.dp
+                                        backgroundColor = mutedPaletteBg
+                                        tints = listOf(HazeTint(mutedPaletteBg.copy(alpha = 0.55f)))
+                                    }
+                                } else {
+                                    Modifier.background(Color.Black)
+                                },
+                            ),
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .windowInsetsPadding(WindowInsets.statusBars),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RippleIconButton(
+                                imageVector = SonoraIcons.ArrowBackIosNew,
+                            ) {
+                                navController.navigateUp()
+                            }
+                            SearchBar(
+                                modifier =
+                                    Modifier
+                                        .height(50.dp)
+                                        .padding(horizontal = 12.dp)
+                                        .weight(1f),
+                                colors =
+                                    SearchBarDefaults.colors().copy(
+                                        containerColor = Color.Transparent,
+                                    ),
+                                inputField = {
+                                    CompositionLocalProvider(LocalTextStyle provides typo().bodySmall) {
+                                        SearchBarDefaults.InputField(
+                                            query = query,
+                                            onQueryChange = { query = it },
+                                            onSearch = { showSearchBar = false },
+                                            expanded = showSearchBar,
+                                            onExpandedChange = { showSearchBar = it },
+                                            placeholder = {
+                                                Text(
+                                                    stringResource(Res.string.search),
+                                                    style = typo().bodyMedium,
+                                                )
+                                            },
+                                        )
+                                    }
+                                },
+                                expanded = false,
+                                onExpandedChange = {},
+                                windowInsets = WindowInsets(0, 0, 0, 0),
+                            ) {
+                            }
+                            IconButton(
+                                onClick = {
+                                    showSearchBar = false
+                                    query = ""
+                                },
+                            ) {
+                                Icon(SonoraIcons.Close, null, tint = Color.White)
+                            }
+                        }
+                    }
                 }
                 if (showBottomSheet) {
                     NowPlayingBottomSheet(

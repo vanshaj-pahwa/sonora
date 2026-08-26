@@ -325,8 +325,8 @@
     <string name="such_as_music_video_lyrics_video_podcasts_and_more">Applies to music videos, lyric videos, podcasts and more</string>
     <string name="video_quality">Video quality</string>
     <plurals name="n_song">
-        <item quantity="one">%d song</item>
-        <item quantity="other">%d songs</item>
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
     </plurals>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -460,7 +460,7 @@
     <string name="to_download_folder">" to Download folder"</string>
     <string name="download_speed">Download speed:  %1$s </string>
     <string name="shuffle">Shuffle</string>
-    <string name="other_version">Other version</string>
+    <string name="you_might_also_like">You might also like</string>
     <string name="later">Later</string>
     <string name="give_a_star">Give a star</string>
     <string name="enjoying_sonora">Enjoying Sonora</string>

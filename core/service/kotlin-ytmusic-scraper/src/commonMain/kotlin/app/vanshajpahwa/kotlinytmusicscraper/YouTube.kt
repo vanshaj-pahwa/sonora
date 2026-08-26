@@ -488,6 +488,20 @@ class YouTube {
                                 it.musicTwoRowItemRenderer,
                             )
                         } ?: emptyList(),
+                otherVersionTitle =
+                    response.contents
+                        .twoColumnBrowseResultsRenderer
+                        .secondaryContents
+                        ?.sectionListRenderer
+                        ?.contents
+                        ?.lastOrNull()
+                        ?.musicCarouselShelfRenderer
+                        ?.header
+                        ?.musicCarouselShelfBasicHeaderRenderer
+                        ?.title
+                        ?.runs
+                        ?.joinToString("") { it.text }
+                        ?.takeIf { it.isNotBlank() },
             )
         }
 
