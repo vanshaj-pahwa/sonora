@@ -204,7 +204,11 @@ internal fun parseMixedContent(
                                                     )
                                                 },
                                             artists = artists,
-                                            description = null,
+                                            description =
+                                                musicTwoRowItemRenderer.subtitle
+                                                    ?.runs
+                                                    ?.joinToString("") { it.text }
+                                                    ?.takeIf { it.isNotBlank() },
                                             isExplicit = ytItem.explicit,
                                             playlistId = null,
                                             browseId = null,
