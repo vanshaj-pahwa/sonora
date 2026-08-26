@@ -469,6 +469,8 @@
     <string name="download_speed">Download speed:  %1$s </string>
     <string name="shuffle">Shuffle</string>
     <string name="you_might_also_like">You might also like</string>
+    <string name="switch_to_video">Switch to video</string>
+    <string name="switch_to_audio">Switch to audio</string>
     <string name="later">Later</string>
     <string name="give_a_star">Give a star</string>
     <string name="enjoying_sonora">Enjoying Sonora</string>
