@@ -13,26 +13,41 @@ internal class UpdateRepositoryImpl(
     private val youTube: YouTube,
 ) : UpdateRepository {
     /**
-     * Update checking is switched off, at the repository rather than the call sites.
+     * The latest release of this project, or an error.
      *
-     * Both checks pointed at somebody else's project: the GitHub one asked
-     * maxrave-dev/Sonora for its latest release, and the F-Droid one asked for a package that
-     * was never published there. Neither could ever return an update for this app, and the GitHub
-     * one would have offered a build with a different applicationId, which installs alongside this
-     * one rather than updating it.
-     *
-     * Disabled here so MainActivity, SharedViewModel and the Settings row keep working untouched:
-     * they simply always hear "no update". Restoring it later means putting a real releases source
-     * back in these two functions and nothing else.
+     * This asks GitHub for the newest tag and hands back what it says. Deciding whether that tag is
+     * newer than the running build belongs to the caller, which is the only place the running
+     * version is known.
      */
     override fun checkForGithubReleaseUpdate(): Flow<Resource<UpdateData>> =
-        flow<Resource<UpdateData>> {
-            emit(Resource.Error("Update checking is disabled"))
+        flow {
+            youTube
+                .checkForGithubReleaseUpdate()
+                .onSuccess { response ->
+                    val tag = response.tagName
+                    if (tag.isNullOrBlank()) {
+                        emit(Resource.Error("No release found"))
+                    } else {
+                        emit(
+                            Resource.Success(
+                                UpdateData(
+                                    tagName = tag,
+                                    releaseTime = response.publishedAt,
+                                    body = response.body.orEmpty(),
+                                ),
+                            ),
+                        )
+                    }
+                }.onFailure {
+                    emit(Resource.Error(it.message ?: "Could not reach GitHub"))
+                }
         }.flowOn(Dispatchers.IO)
 
+    /**
+     * Still off. The package was never published to F-Droid, so this can only ever fail.
+     */
     override fun checkForFdroidUpdate(): Flow<Resource<UpdateData>> =
         flow<Resource<UpdateData>> {
-            emit(Resource.Error("Update checking is disabled"))
+            emit(Resource.Error("Not published on F-Droid"))
         }.flowOn(Dispatchers.IO)
-
 }
