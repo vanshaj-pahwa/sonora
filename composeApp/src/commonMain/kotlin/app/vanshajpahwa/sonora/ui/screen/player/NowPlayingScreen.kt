@@ -1264,7 +1264,17 @@ fun NowPlayingScreenContent(
                                                     .fillMaxWidth()
                                                     .background(Color.Transparent)
                                                     .aspectRatio(
-                                                        if (!screenDataState.isVideo) 1f else 16f / 9,
+                                                        // While the video covers the page this frame
+                                                        // is invisible and exists only to be measured.
+                                                        // A shorter frame here grows the gap above the
+                                                        // title, which pushes the up next card off the
+                                                        // bottom, so it keeps the square footprint the
+                                                        // rest of the layout is balanced around.
+                                                        if (!screenDataState.isVideo || shouldShowVideo) {
+                                                            1f
+                                                        } else {
+                                                            16f / 9
+                                                        },
                                                     ).clip(
                                                         SonoraShapes.Container,
                                                     ).alpha(
@@ -1755,7 +1765,7 @@ fun NowPlayingScreenContent(
                                                 modifier =
                                                     Modifier
                                                         .clip(CircleShape)
-                                                        .background(Color.Black.copy(alpha = 0.45f))
+                                                        .background(Color.Black.copy(alpha = 0.28f))
                                                         .clickable {
                                                             sharedViewModel.toggleVideoForCurrentTrack()
                                                         }.padding(horizontal = 12.dp, vertical = 7.dp),
@@ -1769,7 +1779,7 @@ fun NowPlayingScreenContent(
                                                             SonoraIcons.Movie
                                                         },
                                                     contentDescription = null,
-                                                    tint = Color.White,
+                                                    tint = Color.White.copy(alpha = 0.7f),
                                                     modifier = Modifier.size(18.dp),
                                                 )
                                                 Spacer(Modifier.size(8.dp))
@@ -1781,7 +1791,7 @@ fun NowPlayingScreenContent(
                                                             stringResource(Res.string.switch_to_video)
                                                         },
                                                     style = typo().bodySmall,
-                                                    color = Color.White,
+                                                    color = Color.White.copy(alpha = 0.7f),
                                                 )
                                             }
                                             // Landscape is only on offer once there is a video to turn.
@@ -1792,7 +1802,7 @@ fun NowPlayingScreenContent(
                                                         Modifier
                                                             .size(34.dp)
                                                             .clip(CircleShape)
-                                                            .background(Color.Black.copy(alpha = 0.45f))
+                                                            .background(Color.Black.copy(alpha = 0.28f))
                                                             .clickable {
                                                                 navController.navigate(FullscreenDestination)
                                                             },
@@ -1801,7 +1811,7 @@ fun NowPlayingScreenContent(
                                                     Icon(
                                                         imageVector = SonoraIcons.Fullscreen,
                                                         contentDescription = "Watch in landscape",
-                                                        tint = Color.White,
+                                                        tint = Color.White.copy(alpha = 0.7f),
                                                         modifier = Modifier.size(20.dp),
                                                     )
                                                 }
