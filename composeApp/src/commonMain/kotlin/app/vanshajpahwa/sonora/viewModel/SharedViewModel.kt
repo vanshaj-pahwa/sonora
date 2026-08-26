@@ -333,6 +333,7 @@ class SharedViewModel(
                                             data?.playlistName.orEmpty()
                                         }
                                     },
+                                playlistType = mediaPlayerHandler.queueData.value?.data?.playlistType,
                             )
                     }
                     state.mediaItem.let { now ->
@@ -469,7 +470,9 @@ class SharedViewModel(
                             } else {
                                 data?.playlistName.orEmpty()
                             }
-                        _nowPlayingScreenData.update { it.copy(playlistName = name) }
+                        _nowPlayingScreenData.update {
+                            it.copy(playlistName = name, playlistType = data?.playlistType)
+                        }
                     }
                 }
             job1.join()
@@ -2078,6 +2081,9 @@ enum class LyricsProvider {
 
 data class NowPlayingScreenData(
     val playlistName: String,
+    // What kind of queue the name belongs to. A radio is named after the song it grew from, which
+    // reads as though that one song is playing unless the header can say otherwise.
+    val playlistType: PlaylistType? = null,
     val nowPlayingTitle: String,
     val artistName: String,
     val isVideo: Boolean,

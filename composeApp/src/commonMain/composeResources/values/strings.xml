@@ -468,6 +468,7 @@
     <string name="shuffle">Shuffle</string>
     <string name="you_might_also_like">You might also like</string>
     <string name="update">Update</string>
+    <string name="song_radio_format">%1$s radio</string>
     <string name="play_all">Play all</string>
     <string name="switch_to_video">Switch to video</string>
     <string name="switch_to_audio">Switch to audio</string>

@@ -161,8 +161,10 @@ import app.vanshajpahwa.sonora.ui.component.ExplicitBadge
 import app.vanshajpahwa.sonora.ui.component.FullscreenLyricsSheet
 import app.vanshajpahwa.sonora.ui.component.HeartCheckBox
 import app.vanshajpahwa.sonora.ui.component.OutputDeviceButton
+import app.vanshajpahwa.sonora.resources.song_radio_format
 import app.vanshajpahwa.sonora.resources.switch_to_audio
 import app.vanshajpahwa.sonora.resources.switch_to_video
+import app.vanshajpahwa.domain.mediaservice.handler.PlaylistType
 import app.vanshajpahwa.sonora.ui.icon.Movie
 import app.vanshajpahwa.sonora.ui.icon.MusicNote
 import app.vanshajpahwa.sonora.ui.component.InfoPlayerBottomSheet
@@ -1560,7 +1562,20 @@ fun NowPlayingScreenContent(
                                 color = Color.White,
                             )
                             Text(
-                                text = screenDataState.playlistName,
+                                // Decorated here rather than at every entry point that can start a
+                                // radio, so one added later is covered too, and the stored name stays
+                                // plain for the queue sheet and the notification.
+                                text =
+                                    if (screenDataState.playlistType == PlaylistType.RADIO &&
+                                        screenDataState.playlistName.isNotBlank()
+                                    ) {
+                                        stringResource(
+                                            Res.string.song_radio_format,
+                                            screenDataState.playlistName,
+                                        )
+                                    } else {
+                                        screenDataState.playlistName
+                                    },
                                 style = typo().labelMedium,
                                 color = Color.White,
                                 textAlign = TextAlign.Center,
