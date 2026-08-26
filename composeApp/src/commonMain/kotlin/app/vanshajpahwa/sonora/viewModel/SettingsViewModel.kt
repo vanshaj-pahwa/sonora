@@ -98,8 +98,6 @@ class SettingsViewModel(
     val useTranslation: StateFlow<String?> = _useTranslation
     private var _playerCacheLimit: MutableStateFlow<Int?> = MutableStateFlow(null)
     val playerCacheLimit: StateFlow<Int?> = _playerCacheLimit
-    private var _playVideoInsteadOfAudio: MutableStateFlow<String?> = MutableStateFlow(null)
-    val playVideoInsteadOfAudio: StateFlow<String?> = _playVideoInsteadOfAudio
     private var _videoQuality: MutableStateFlow<String?> = MutableStateFlow(null)
     val videoQuality: StateFlow<String?> = _videoQuality
     private var _thumbCacheSize = MutableStateFlow<Long?>(null)
@@ -265,7 +263,6 @@ class SettingsViewModel(
         getYoutubeSubtitleLanguage()
         getLyricsProvider()
         getUseTranslation()
-        getPlayVideoInsteadOfAudio()
         getVideoQuality()
         getSpotifyLogIn()
         getSpotifyLyrics()
@@ -1057,21 +1054,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             dataStoreManager.setSponsorBlockEnabled(enabled)
             getSponsorBlockEnabled()
-        }
-    }
-
-    fun getPlayVideoInsteadOfAudio() {
-        viewModelScope.launch {
-            dataStoreManager.watchVideoInsteadOfPlayingAudio.collect { playVideoInsteadOfAudio ->
-                _playVideoInsteadOfAudio.emit(playVideoInsteadOfAudio)
-            }
-        }
-    }
-
-    fun setPlayVideoInsteadOfAudio(playVideoInsteadOfAudio: Boolean) {
-        viewModelScope.launch {
-            dataStoreManager.setWatchVideoInsteadOfPlayingAudio(playVideoInsteadOfAudio)
-            getPlayVideoInsteadOfAudio()
         }
     }
 

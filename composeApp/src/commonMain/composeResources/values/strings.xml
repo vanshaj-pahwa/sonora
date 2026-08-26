@@ -321,8 +321,6 @@
     <string name="podcasts" translatable="false">Podcasts</string>
     <string name="featured_inArtist">Featured on</string>
     <string name="audio_quality">Audio quality</string>
-    <string name="play_video_for_video_track_instead_of_audio_only">Play the video for video tracks rather than audio only</string>
-    <string name="such_as_music_video_lyrics_video_podcasts_and_more">Applies to music videos, lyric videos, podcasts and more</string>
     <string name="video_quality">Video quality</string>
     <plurals name="n_album">
         <item quantity="one">%1$d album</item>
