@@ -202,27 +202,15 @@ fun HomeTrackCard(
             // The badge doubles as the now playing indicator. A play triangle on the track that is
             // already playing is a lie about what tapping does, and the bars are the same signal the
             // list rows elsewhere in the app already use, so it needs no explaining.
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.55f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Crossfade(targetState = isPlaying, label = "cardPlayingState") { playing ->
-                    if (playing) {
-                        NowPlayingIndicator(modifier = Modifier.size(22.dp))
-                    } else {
-                        Icon(
-                            imageVector = SonoraIcons.PlayArrow,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
+            // Only the track that is playing carries a badge. Every other card in the feed shows
+            // artwork alone, and a play triangle on all of them said nothing tapping did not.
+            if (isPlaying) {
+                NowPlayingIndicator(
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(48.dp),
+                )
             }
         }
         Spacer(Modifier.height(7.dp))
