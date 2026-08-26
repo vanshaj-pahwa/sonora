@@ -1036,7 +1036,9 @@ class SettingsViewModel(
 
     fun getLastCheckForUpdate() {
         viewModelScope.launch {
-            dataStoreManager.getString("CheckForUpdateAt").first().let { lastCheckForUpdate ->
+            // Collected rather than read once. Settings is already open when the check it triggers
+            // finishes, so a single read left the row reporting the time before last.
+            dataStoreManager.getString("CheckForUpdateAt").collect { lastCheckForUpdate ->
                 _lastCheckForUpdate.emit(lastCheckForUpdate)
             }
         }
