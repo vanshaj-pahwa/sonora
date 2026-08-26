@@ -2388,14 +2388,14 @@ fun SettingScreen(
                     title = stringResource(Res.string.author),
                     subtitle = stringResource(Res.string.author_name),
                     onClick = {
-                        uriHandler.openUri("https://github.com/vanshaj-pahwa")
+                        uriHandler.openUri("https://github.com/vanshaj-pahwa/sonora")
                     },
                 )
                 SettingItem(
                     title = stringResource(Res.string.developer_blog),
                     subtitle = stringResource(Res.string.developer_blog_tagline),
                     onClick = {
-                        uriHandler.openUri("https://github.com/vanshaj-pahwa")
+                        uriHandler.openUri("https://github.com/vanshaj-pahwa/sonora")
                     },
                 )
                 if (getPlatform() == Platform.Android) {
