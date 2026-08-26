@@ -232,6 +232,7 @@ fun MediaPlayerViewWithSubtitle(
     translatedLyricsData: Lyrics? = null,
     mainTextStyle: TextStyle,
     translatedTextStyle: TextStyle,
+    cropToBounds: Boolean = false,
 ) {
     val player: Player = koinInject(named(playerName))
 
@@ -453,10 +454,21 @@ fun MediaPlayerViewWithSubtitle(
                     player = player,
                     surfaceType = SURFACE_TYPE_SURFACE_VIEW,
                     modifier =
-                        Modifier
-                            .wrapContentSize()
-                            .aspectRatio(if (videoRatio > 0f) videoRatio else 16f / 9)
-                            .align(Alignment.Center),
+                        if (cropToBounds) {
+                            // Fill the frame and clip the overflow, keeping the true aspect ratio.
+                            // A 16:9 video in a portrait frame is cropped, not letterboxed.
+                            Modifier
+                                .fillMaxSize()
+                                .resizeWithContentScale(
+                                    contentScale = ContentScale.Crop,
+                                    sourceSizeDp = presentationState.videoSizeDp,
+                                )
+                        } else {
+                            Modifier
+                                .wrapContentSize()
+                                .aspectRatio(if (videoRatio > 0f) videoRatio else 16f / 9)
+                                .align(Alignment.Center)
+                        },
                 )
 
                 if (presentationState.coverSurface) {

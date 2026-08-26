@@ -44,6 +44,7 @@ actual fun MediaPlayerViewWithSubtitle(
     translatedLyricsData: Lyrics?,
     mainTextStyle: TextStyle,
     translatedTextStyle: TextStyle,
+    cropToBounds: Boolean,
 ) {
     MediaPlayerViewWithSubtitle(
         playerName = playerName,
@@ -59,5 +60,6 @@ actual fun MediaPlayerViewWithSubtitle(
         isInPipMode = isInPipMode,
         mainTextStyle = typo().bodyLarge,
         translatedTextStyle = typo().bodyMedium,
+        cropToBounds = cropToBounds,
     )
 }

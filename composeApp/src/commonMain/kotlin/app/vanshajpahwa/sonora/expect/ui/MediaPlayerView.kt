@@ -29,4 +29,5 @@ expect fun MediaPlayerViewWithSubtitle(
     translatedLyricsData: Lyrics? = null,
     mainTextStyle: TextStyle,
     translatedTextStyle: TextStyle,
+    cropToBounds: Boolean = false,
 )

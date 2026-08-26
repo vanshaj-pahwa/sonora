@@ -30,6 +30,7 @@ import app.vanshajpahwa.domain.data.model.update.UpdateData
 import app.vanshajpahwa.domain.data.player.GenericCastState
 import app.vanshajpahwa.domain.extension.decodeHtmlEntities
 import app.vanshajpahwa.domain.extension.isSong
+import app.vanshajpahwa.common.VideoPlaybackOverride
 import app.vanshajpahwa.domain.extension.isVideo
 import app.vanshajpahwa.domain.extension.toGenericMediaItem
 import app.vanshajpahwa.domain.manager.DataStoreManager
@@ -73,6 +74,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -181,7 +183,15 @@ class SharedViewModel(
         )
     val controllerState: StateFlow<ControlState> = _controllerState
     private val _getVideo: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    val getVideo: StateFlow<Boolean> = _getVideo
+
+    // Null until the listener decides for this track, at which point the setting stops applying.
+    private val _videoOverride: MutableStateFlow<Boolean?> = MutableStateFlow(null)
+
+    /** What the player should actually show right now: the track's own choice, else the setting. */
+    val getVideo: StateFlow<Boolean> =
+        combine(_getVideo, _videoOverride) { setting, override ->
+            override ?: setting
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private var _timeline =
         MutableStateFlow<TimeLine>(
@@ -327,6 +337,8 @@ class SharedViewModel(
                     }
                     state.mediaItem.let { now ->
                         _canvas.value = null
+                        // A choice is made about one track, not about everything that follows it.
+                        clearVideoOverride()
                         getLikeStatus(now.mediaId)
                         getSongInfo(now.mediaId)
                         getFormat(now.mediaId)
@@ -469,6 +481,31 @@ class SharedViewModel(
         checkAllDownloadingSongs()
         checkAllDownloadingPlaylists()
         checkAllDownloadingLocalPlaylists()
+    }
+
+    /**
+     * Switch the current track between its video and its audio.
+     *
+     * The source for an item is built once, when the player prepares it, so flipping the flag alone
+     * would not reach a track already playing. Replacing the item at its own index rebuilds it, and
+     * the position is restored so the switch costs a re-buffer rather than the listener's place.
+     */
+    fun toggleVideoForCurrentTrack() {
+        val next = !getVideo.value
+        _videoOverride.value = next
+        VideoPlaybackOverride.enabled = next
+        val player = mediaPlayerHandler.player
+        val item = player.currentMediaItem ?: return
+        val index = player.currentMediaItemIndex
+        val position = player.currentPosition
+        player.replaceMediaItem(index, item)
+        player.seekTo(position)
+        player.prepare()
+    }
+
+    private fun clearVideoOverride() {
+        _videoOverride.value = null
+        VideoPlaybackOverride.enabled = null
     }
 
     fun setIntent(intent: GenericIntent?) {

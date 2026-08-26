@@ -18,6 +18,7 @@ import app.vanshajpahwa.sonora.extension.findActivity
 
 @Composable
 actual fun FullScreenRotationImmersive(
+    landscape: Boolean,
     onLaunch: () -> Unit,
     onDispose: () -> Unit,
 ) {
@@ -31,7 +32,6 @@ actual fun FullScreenRotationImmersive(
     DisposableEffect(true) {
         onLaunch.invoke()
         val activity = context.findActivity()
-        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         val window = context.findActivity().window
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
@@ -52,6 +52,17 @@ actual fun FullScreenRotationImmersive(
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             onDispose.invoke()
         }
+    }
+
+    // Re-applied whenever the choice changes, so the toggle turns the device rather than only
+    // deciding which way it faces on the way in.
+    LaunchedEffect(landscape) {
+        context.findActivity().requestedOrientation =
+            if (landscape) {
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
     }
 
     LaunchedEffect(true) {
