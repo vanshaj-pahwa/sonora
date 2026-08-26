@@ -2,9 +2,9 @@ name: CI
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths-ignore: [ 'README.md', 'docs/**', '.github/**/*.md' ]
+  # No push trigger for main. Everything reaches main through a pull request, which is already
+  # built here before it merges, and the tag build produces the artifact. Building the merge
+  # commit as well was the same code a third time.
   pull_request:
     branches: [ main ]
     paths-ignore: [ 'README.md', 'docs/**', '.github/**/*.md' ]

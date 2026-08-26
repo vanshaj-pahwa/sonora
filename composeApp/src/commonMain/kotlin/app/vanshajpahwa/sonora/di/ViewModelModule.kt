@@ -80,6 +80,8 @@ val viewModelModule =
             LibraryDynamicPlaylistViewModel(
                 get(),
                 get(),
+                get(),
+                get(),
             )
         }
         viewModel {

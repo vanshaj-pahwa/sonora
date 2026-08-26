@@ -159,11 +159,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
-import app.vanshajpahwa.sonora.resources.album_length
+import app.vanshajpahwa.sonora.resources.n_song
 import app.vanshajpahwa.sonora.resources.baseline_downloaded
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.downloading
@@ -978,9 +979,10 @@ fun PlaylistScreen(
                                                         if (data.isRadio) {
                                                             stringResource(Res.string.unlimited)
                                                         } else {
-                                                            stringResource(
-                                                                Res.string.album_length,
-                                                                (data.trackCount).toString(),
+                                                            pluralStringResource(
+                                                                Res.plurals.n_song,
+                                                                data.trackCount,
+                                                                data.trackCount,
                                                             )
                                                         },
                                                     color = Color.White,

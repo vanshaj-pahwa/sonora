@@ -102,6 +102,16 @@ import app.vanshajpahwa.sonora.resources.description
 import app.vanshajpahwa.sonora.resources.playlist
 import app.vanshajpahwa.sonora.resources.subscribers
 import app.vanshajpahwa.sonora.resources.you
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Brush
+import app.vanshajpahwa.sonora.resources.play_all
+import app.vanshajpahwa.sonora.ui.icon.MoreVert
+import app.vanshajpahwa.sonora.ui.icon.SonoraIcons
 
 @Composable
 fun HomeItem(
@@ -131,6 +141,31 @@ fun HomeItem(
     if (data.contents.isEmpty()) return
 
     val channelId = data.channelId
+    // A shelf of nothing but songs can be shown far more densely than a row of large tiles.
+    // Which of the two dense layouts applies is decided by the shelf's own heading, because the
+    // response carries no other mark distinguishing a recommendation shelf from a popularity one.
+    val songs = data.contents.filterNotNull().filter { !it.videoId.isNullOrEmpty() }
+    val allSongs = songs.size == data.contents.size && songs.isNotEmpty()
+    val isDiscover = allSongs && data.title.contains("daily discover", ignoreCase = true)
+    val isTrending = allSongs && !isDiscover
+
+    val playAll: () -> Unit = {
+        val tracks = songs.map { it.toTrack() }
+        tracks.firstOrNull()?.let { first ->
+            homeViewModel.setQueueData(
+                QueueData.Data(
+                    listTracks = ArrayList(tracks),
+                    firstPlayedTrack = first,
+                    playlistId = "RDAMVM${first.videoId}",
+                    playlistName = data.title,
+                    playlistType = PlaylistType.RADIO,
+                    continuation = null,
+                ),
+            )
+            homeViewModel.loadMediaItem(first, Config.SONG_CLICK)
+        }
+    }
+
     Column {
         Row(
             modifier =
@@ -175,7 +210,8 @@ fun HomeItem(
             }
             Column(
                 Modifier
-                    .padding(start = 10.dp),
+                    .padding(start = 10.dp)
+                    .weight(1f),
             ) {
                 AnimatedVisibility(visible = (data.subtitle != null && data.subtitle != "")) {
                     Text(
@@ -191,12 +227,65 @@ fun HomeItem(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            if (allSongs) {
+                TextButton(onClick = playAll) {
+                    Text(
+                        text = stringResource(Res.string.play_all),
+                        style = typo().bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
         }
         // The header and the row it belongs to had nothing between them. The gap used to arrive by
         // accident, from the 10.dp padding on each card, and shrinking that padding to kill the dead
         // band under the cards took the breathing room above them with it. An explicit spacer means
         // the title keeps its distance whatever the cards do, and every feed section gets it.
         Spacer(modifier = Modifier.height(12.dp))
+        if (isDiscover) {
+            DailyDiscoverPager(
+                songs = songs,
+                onPlay = { content ->
+                    val first = content.toTrack()
+                    homeViewModel.setQueueData(
+                        QueueData.Data(
+                            listTracks = arrayListOf(first),
+                            firstPlayedTrack = first,
+                            playlistId = "RDAMVM${content.videoId}",
+                            playlistName = content.title,
+                            playlistType = PlaylistType.RADIO,
+                            continuation = null,
+                        ),
+                    )
+                    homeViewModel.loadMediaItem(first, Config.SONG_CLICK)
+                },
+            )
+            return@Column
+        }
+        if (isTrending) {
+            TrendingSongColumns(
+                songs = songs,
+                onPlay = { content ->
+                    val first = content.toTrack()
+                    homeViewModel.setQueueData(
+                        QueueData.Data(
+                            listTracks = arrayListOf(first),
+                            firstPlayedTrack = first,
+                            playlistId = "RDAMVM${content.videoId}",
+                            playlistName = content.title,
+                            playlistType = PlaylistType.RADIO,
+                            continuation = null,
+                        ),
+                    )
+                    homeViewModel.loadMediaItem(first, Config.SONG_CLICK)
+                },
+                onMore = { content ->
+                    track = content.toTrack()
+                    bottomSheetShow = true
+                },
+            )
+            return@Column
+        }
         LazyRow(
             state = lazyListState,
             flingBehavior = snapperFlingBehavior,
@@ -1335,6 +1424,168 @@ fun MoodAndGenresContentItem(
                         )
                     }
                 }, data = item)
+            }
+        }
+    }
+}
+/**
+ * The recommendation shelf, one large card at a time.
+ *
+ * A square tile can only carry a title and an artist. The card has room for the reason the track
+ * was picked, which is the part that turns a recommendation into something a listener will trust.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DailyDiscoverPager(
+    songs: List<Content>,
+    onPlay: (Content) -> Unit,
+) {
+    val pagerState = rememberPagerState(pageCount = { songs.size })
+    HorizontalPager(
+        state = pagerState,
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        pageSpacing = 10.dp,
+    ) { page ->
+        val item = songs[page]
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(SonoraShapes.Container)
+                    .clickable { onPlay(item) },
+        ) {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalPlatformContext.current)
+                        .data(item.thumbnails.lastOrNull()?.url)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(item.thumbnails.lastOrNull()?.url)
+                        .crossfade(550)
+                        .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                placeholder = rememberHolderPainter(),
+                error = rememberHolderPainter(),
+                modifier = Modifier.matchParentSize(),
+            )
+            // Both ends carry text over artwork, so both ends need a floor under it.
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Black.copy(alpha = 0.55f),
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.65f),
+                                ),
+                            ),
+                        ),
+            )
+            Column(modifier = Modifier.align(Alignment.TopStart).padding(16.dp)) {
+                Text(
+                    text = item.title,
+                    style = typo().titleMedium,
+                    color = Color.White,
+                    maxLines = 1,
+                )
+                Text(
+                    text = item.artists?.joinToString(", ") { it.name }.orEmpty(),
+                    style = typo().bodyMedium,
+                    color = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1,
+                )
+            }
+            item.description?.takeIf { it.isNotBlank() }?.let { context ->
+                Text(
+                    text = context,
+                    style = typo().bodySmall,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 2,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(16.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The popularity shelf as a scannable list.
+ *
+ * Four songs to a column, columns scrolling sideways: the same sideways gesture as before, but
+ * four times the songs on screen and a shape that can be read down rather than across.
+ */
+@Composable
+private fun TrendingSongColumns(
+    songs: List<Content>,
+    onPlay: (Content) -> Unit,
+    onMore: (Content) -> Unit,
+) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp)) {
+        items(songs.chunked(4)) { column ->
+            Column(modifier = Modifier.fillParentMaxWidth(0.92f)) {
+                column.forEach { item ->
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onPlay(item) }
+                                .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AsyncImage(
+                            model =
+                                ImageRequest
+                                    .Builder(LocalPlatformContext.current)
+                                    .data(item.thumbnails.lastOrNull()?.url)
+                                    .diskCachePolicy(CachePolicy.ENABLED)
+                                    .diskCacheKey(item.thumbnails.lastOrNull()?.url)
+                                    .crossfade(550)
+                                    .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            placeholder = rememberHolderPainter(),
+                            error = rememberHolderPainter(),
+                            modifier =
+                                Modifier
+                                    .size(48.dp)
+                                    .clip(SonoraShapes.Media),
+                        )
+                        Column(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 12.dp),
+                        ) {
+                            Text(
+                                text = item.title,
+                                style = typo().titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                            )
+                            Text(
+                                text =
+                                    item.description?.takeIf { it.isNotBlank() }
+                                        ?: item.artists?.joinToString(", ") { it.name }.orEmpty(),
+                                style = typo().bodySmall,
+                                maxLines = 1,
+                            )
+                        }
+                        IconButton(onClick = { onMore(item) }) {
+                            Icon(
+                                imageVector = SonoraIcons.MoreVert,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

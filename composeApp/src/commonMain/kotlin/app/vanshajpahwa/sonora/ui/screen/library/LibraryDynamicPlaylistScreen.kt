@@ -74,6 +74,11 @@ import app.vanshajpahwa.sonora.ui.navigation.destination.list.AlbumDestination
 import app.vanshajpahwa.sonora.ui.navigation.destination.list.ArtistDestination
 import app.vanshajpahwa.sonora.ui.theme.typo
 import app.vanshajpahwa.sonora.viewModel.AnalyticsViewModel
+import androidx.compose.foundation.lazy.LazyRow
+import app.vanshajpahwa.domain.data.entities.AlbumEntity
+import app.vanshajpahwa.domain.data.entities.PlaylistEntity
+import app.vanshajpahwa.sonora.ui.component.HomeItemContentPlaylist
+import app.vanshajpahwa.sonora.ui.navigation.destination.list.PlaylistDestination
 import app.vanshajpahwa.sonora.viewModel.LibraryDynamicPlaylistViewModel
 import app.vanshajpahwa.sonora.viewModel.SharedViewModel
 import dev.chrisbanes.haze.hazeEffect
@@ -82,11 +87,13 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
 import app.vanshajpahwa.sonora.ui.component.LibraryEmptyState
+import app.vanshajpahwa.sonora.resources.albums_and_playlists
 import app.vanshajpahwa.sonora.resources.empty_favorite
 import app.vanshajpahwa.sonora.resources.empty_followed
 import app.vanshajpahwa.sonora.resources.empty_most_played
@@ -94,7 +101,9 @@ import app.vanshajpahwa.sonora.resources.empty_downloaded
 import app.vanshajpahwa.sonora.resources.empty_top_tracks
 import app.vanshajpahwa.sonora.resources.empty_top_artists
 import app.vanshajpahwa.sonora.resources.empty_top_albums
-import app.vanshajpahwa.sonora.resources.album_length
+import app.vanshajpahwa.sonora.resources.n_album
+import app.vanshajpahwa.sonora.resources.n_playlist
+import app.vanshajpahwa.sonora.resources.n_song
 import app.vanshajpahwa.sonora.resources.artists
 import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
@@ -132,6 +141,7 @@ fun LibraryDynamicPlaylistScreen(
     var isGridLayout by rememberSaveable { mutableStateOf(false) }
 
     val favorite by viewModel.listFavoriteSong.collectAsStateWithLifecycle()
+    val favoriteCollection by viewModel.listFavoriteCollection.collectAsStateWithLifecycle()
     var tempFavorite by remember { mutableStateOf(emptyList<SongEntity>()) }
     val followed by viewModel.listFollowedArtist.collectAsStateWithLifecycle()
     var tempFollowed by remember { mutableStateOf(emptyList<ArtistEntity>()) }
@@ -193,7 +203,7 @@ fun LibraryDynamicPlaylistScreen(
         // search that matches nothing says so instead of claiming the library is empty.
         val isEmpty =
             when (type) {
-                LibraryDynamicPlaylistType.Favorite -> favorite.isEmpty()
+                LibraryDynamicPlaylistType.Favorite -> favorite.isEmpty() && favoriteCollection.isEmpty()
                 LibraryDynamicPlaylistType.Followed -> followed.isEmpty()
                 LibraryDynamicPlaylistType.MostPlayed -> mostPlayed.isEmpty()
                 LibraryDynamicPlaylistType.Downloaded -> downloaded.isEmpty()
@@ -204,7 +214,7 @@ fun LibraryDynamicPlaylistScreen(
         val isSearchingWithNoHits =
             showSearchBar && query.isNotEmpty() &&
                 when (type) {
-                    LibraryDynamicPlaylistType.Favorite -> tempFavorite.isEmpty()
+                    LibraryDynamicPlaylistType.Favorite -> tempFavorite.isEmpty() && favoriteCollection.isEmpty()
                     LibraryDynamicPlaylistType.Followed -> tempFollowed.isEmpty()
                     LibraryDynamicPlaylistType.MostPlayed -> tempMostPlayed.isEmpty()
                     LibraryDynamicPlaylistType.Downloaded -> tempDownloaded.isEmpty()
@@ -419,27 +429,72 @@ fun LibraryDynamicPlaylistScreen(
                             it.artistName?.firstOrNull()?.lowercase().orEmpty()
                         }
                 }
-            item {
-                ListControlsRow(
-                    sort = listSort,
-                    onSortChange = { listSort = it },
-                    isGrid = isGridLayout,
-                    onToggleLayout = { isGridLayout = !isGridLayout },
-                    // Names the order the page actually arrives in. One shared "Custom order" told
-                    // the reader nothing and was untrue on a page whose whole purpose is a ranking.
-                    defaultSortLabel =
-                        stringResource(
-                            when (type) {
-                                LibraryDynamicPlaylistType.MostPlayed,
-                                LibraryDynamicPlaylistType.TopTracks,
-                                -> Res.string.sort_play_count
-                                LibraryDynamicPlaylistType.Favorite -> Res.string.sort_date_liked
-                                else -> Res.string.sort_date_added
-                            },
-                        ),
-                    titleLabel = stringResource(Res.string.title),
-                    artistLabel = stringResource(Res.string.artists),
-                )
+            if (type == LibraryDynamicPlaylistType.Favorite && favoriteCollection.isNotEmpty()) {
+                item {
+                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                        Text(
+                            text = stringResource(Res.string.albums_and_playlists),
+                            style = typo().labelMedium,
+                            modifier = Modifier.padding(start = 15.dp, top = 8.dp, bottom = 8.dp),
+                        )
+                        LazyRow(contentPadding = PaddingValues(horizontal = 11.dp)) {
+                            items(
+                                favoriteCollection,
+                                key = { item ->
+                                    when (item) {
+                                        is AlbumEntity -> item.browseId
+                                        is PlaylistEntity -> item.id
+                                        else -> item.hashCode()
+                                    }
+                                },
+                            ) { item ->
+                                Box(modifier = Modifier.padding(horizontal = 4.dp)) {
+                                    when (item) {
+                                        is AlbumEntity ->
+                                            HomeItemContentPlaylist(
+                                                data = item,
+                                                onClick = {
+                                                    navController.navigate(AlbumDestination(item.browseId))
+                                                },
+                                            )
+                                        is PlaylistEntity ->
+                                            HomeItemContentPlaylist(
+                                                data = item,
+                                                onClick = {
+                                                    navController.navigate(PlaylistDestination(item.id))
+                                                },
+                                            )
+                                        else -> {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (sorted.isNotEmpty()) {
+                item {
+                    ListControlsRow(
+                        sort = listSort,
+                        onSortChange = { listSort = it },
+                        isGrid = isGridLayout,
+                        onToggleLayout = { isGridLayout = !isGridLayout },
+                        // Names the order the page actually arrives in. One shared "Custom order" told
+                        // the reader nothing and was untrue on a page whose whole purpose is a ranking.
+                        defaultSortLabel =
+                            stringResource(
+                                when (type) {
+                                    LibraryDynamicPlaylistType.MostPlayed,
+                                    LibraryDynamicPlaylistType.TopTracks,
+                                    -> Res.string.sort_play_count
+                                    LibraryDynamicPlaylistType.Favorite -> Res.string.sort_date_liked
+                                    else -> Res.string.sort_date_added
+                                },
+                            ),
+                        titleLabel = stringResource(Res.string.title),
+                        artistLabel = stringResource(Res.string.artists),
+                    )
+                }
             }
             if (isGridLayout) {
                 // Chunked into pairs inside the existing LazyColumn rather than swapping in a
@@ -529,12 +584,22 @@ fun LibraryDynamicPlaylistScreen(
         // library total while the user is typing in the search bar.
         val subtitle =
             when (type) {
-                LibraryDynamicPlaylistType.Favorite ->
-                    stringResource(Res.string.album_length, favorite.size.toString(), "")
+                LibraryDynamicPlaylistType.Favorite -> {
+                    val albumCount = favoriteCollection.count { it is AlbumEntity }
+                    val playlistCount = favoriteCollection.count { it is PlaylistEntity }
+                    val songsPart = pluralStringResource(Res.plurals.n_song, favorite.size, favorite.size)
+                    val albumsPart = pluralStringResource(Res.plurals.n_album, albumCount, albumCount)
+                    val playlistsPart = pluralStringResource(Res.plurals.n_playlist, playlistCount, playlistCount)
+                    listOfNotNull(
+                        songsPart.takeIf { favorite.isNotEmpty() },
+                        albumsPart.takeIf { albumCount > 0 },
+                        playlistsPart.takeIf { playlistCount > 0 },
+                    ).joinToString(" · ")
+                }
                 LibraryDynamicPlaylistType.MostPlayed ->
-                    stringResource(Res.string.album_length, mostPlayed.size.toString(), "")
+                    pluralStringResource(Res.plurals.n_song, mostPlayed.size, mostPlayed.size)
                 LibraryDynamicPlaylistType.Downloaded ->
-                    stringResource(Res.string.album_length, downloaded.size.toString(), "")
+                    pluralStringResource(Res.plurals.n_song, downloaded.size, downloaded.size)
                 LibraryDynamicPlaylistType.Followed ->
                     "${followed.size} ${stringResource(Res.string.artists)}"
                 else -> null

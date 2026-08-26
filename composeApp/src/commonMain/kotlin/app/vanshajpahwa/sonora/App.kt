@@ -130,6 +130,11 @@ import app.vanshajpahwa.sonora.resources.update_message
 import app.vanshajpahwa.sonora.resources.version_format
 import app.vanshajpahwa.sonora.resources.yes
 import kotlin.time.ExperimentalTime
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import app.vanshajpahwa.sonora.ui.icon.Close
+import app.vanshajpahwa.sonora.resources.update
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class, ExperimentalFoundationApi::class)
 @Composable
@@ -316,9 +321,9 @@ fun App(
 
     LaunchedEffect(updateData) {
         val response = updateData ?: return@LaunchedEffect
-        if (viewModel.showedUpdateDialog &&
-            response.tagName != getString(Res.string.version_format, VersionManager.getVersionName())
-        ) {
+        // Compared part by part, not for inequality. A plain "differs" offered any tag that was
+        // not this one, including older ones.
+        if (viewModel.showedUpdateDialog && isNewerVersion(response.tagName, VersionManager.getVersionName())) {
             shouldShowUpdateDialog = true
         }
     }
@@ -421,6 +426,54 @@ fun App(
                                             .padding(horizontal = 12.dp)
                                             .padding(bottom = 4.dp),
                                 )
+                            }
+                            // An update is a standing offer, not something to interrupt with. It waits under
+                            // the navigation bar until it is taken or dismissed.
+                            if (shouldShowUpdateDialog) {
+                                updateData?.let { update ->
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                                .padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = stringResource(Res.string.update_available) + "  " + update.tagName,
+                                            style = typo().bodySmall,
+                                            maxLines = 1,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        TextButton(
+                                            onClick = {
+                                                shouldShowUpdateDialog = false
+                                                viewModel.showedUpdateDialog = false
+                                                openUrl("https://github.com/vanshaj-pahwa/sonora/releases/latest")
+                                            },
+                                        ) {
+                                            Text(
+                                                text = stringResource(Res.string.update),
+                                                style = typo().bodySmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                shouldShowUpdateDialog = false
+                                                viewModel.showedUpdateDialog = false
+                                            },
+                                        ) {
+                                            Icon(
+                                                imageVector = SonoraIcons.Close,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -620,126 +673,6 @@ fun App(
                     )
                 }
 
-                if (shouldShowUpdateDialog) {
-                    val response = updateData ?: return@Scaffold
-                    AlertDialog(
-                        properties =
-                            DialogProperties(
-                                dismissOnBackPress = false,
-                                dismissOnClickOutside = false,
-                            ),
-                        onDismissRequest = {
-                            shouldShowUpdateDialog = false
-                            viewModel.showedUpdateDialog = false
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    shouldShowUpdateDialog = false
-                                    viewModel.showedUpdateDialog = false
-                                    openUrl("https://github.com/vanshaj-pahwa")
-                                },
-                            ) {
-                                Text(
-                                    stringResource(Res.string.download),
-                                    style = typo().bodySmall,
-                                )
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    shouldShowUpdateDialog = false
-                                    viewModel.showedUpdateDialog = false
-                                },
-                            ) {
-                                Text(
-                                    stringResource(Res.string.cancel),
-                                    style = typo().bodySmall,
-                                )
-                            }
-                        },
-                        title = {
-                            Text(
-                                stringResource(Res.string.update_available),
-                                style = typo().labelSmall,
-                            )
-                        },
-                        text = {
-                            val formatted =
-                                response.releaseTime?.let { input ->
-                                    try {
-                                        val instant = kotlin.time.Instant.parse(input)
-                                        val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-                                        dateTime.format(
-                                            LocalDateTime.Format {
-                                                day()
-                                                char(' ')
-                                                monthName(MonthNames.ENGLISH_ABBREVIATED)
-                                                char(' ')
-                                                year()
-                                                char(' ')
-                                                hour()
-                                                char(':')
-                                                minute()
-                                                char(':')
-                                                second()
-                                            },
-                                        )
-                                    } catch (e: Exception) {
-                                        stringResource(Res.string.unknown)
-                                    }
-                                } ?: stringResource(Res.string.unknown)
-
-                            val updateMessage =
-                                runBlocking {
-                                    getString(
-                                        Res.string.update_message,
-                                        response.tagName,
-                                        formatted,
-                                    )
-                                }
-                            Column(
-                                Modifier
-                                    .heightIn(
-                                        max = 400.dp,
-                                    ).verticalScroll(
-                                        rememberScrollState(),
-                                    ),
-                            ) {
-                                Text(
-                                    text = updateMessage,
-                                    style = typo().labelMedium,
-                                    modifier =
-                                        Modifier.padding(
-                                            vertical = 8.dp,
-                                        ),
-                                )
-                                Markdown(
-                                    response.body,
-                                    typography =
-                                        markdownTypography(
-                                            h1 = typo().labelLarge,
-                                            h2 = typo().labelMedium,
-                                            h3 = typo().labelSmall,
-                                            text = typo().bodySmall,
-                                            bullet = typo().bodySmall,
-                                            paragraph = typo().bodySmall,
-                                            textLink =
-                                                TextLinkStyles(
-                                                    SpanStyle(
-                                                        
-                                                        fontWeight = FontWeight.Normal,
-                                                        fontFamily = fontFamily(),
-                                                        textDecoration = TextDecoration.Underline,
-                                                    ),
-                                                ),
-                                        ),
-                                )
-                            }
-                        },
-                    )
-                }
 
                 if (showNotificationPermissionDialog) {
                     var doNotShowAgain by remember { mutableStateOf(false) }
@@ -796,4 +729,31 @@ fun App(
             },
         )
     }
+}
+/**
+ * Whether [tagName] names a release later than [current].
+ *
+ * Tags arrive as "v1.2.0" and the running version as "1.2.0". Anything that does not parse as
+ * numbers is treated as not newer, so a malformed tag cannot nag every launch.
+ */
+private fun isNewerVersion(
+    tagName: String?,
+    current: String,
+): Boolean {
+    val candidate = versionParts(tagName) ?: return false
+    val running = versionParts(current) ?: return false
+    for (i in 0 until maxOf(candidate.size, running.size)) {
+        val a = candidate.getOrElse(i) { 0 }
+        val b = running.getOrElse(i) { 0 }
+        if (a != b) return a > b
+    }
+    return false
+}
+
+/** "v1.2.0" and "1.2.0" both become [1, 2, 0]. Null when any part is not a number. */
+private fun versionParts(value: String?): List<Int>? {
+    val cleaned = value?.trim()?.removePrefix("v") ?: return null
+    if (cleaned.isEmpty()) return null
+    val parts = cleaned.split(".").map { it.takeWhile(Char::isDigit).toIntOrNull() }
+    return if (parts.any { it == null }) null else parts.filterNotNull()
 }

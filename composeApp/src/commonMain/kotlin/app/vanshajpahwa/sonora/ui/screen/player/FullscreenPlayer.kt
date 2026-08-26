@@ -76,6 +76,7 @@ import app.vanshajpahwa.sonora.ui.icon.FullscreenExit
 import app.vanshajpahwa.sonora.ui.icon.KeyboardDoubleArrowLeft
 import app.vanshajpahwa.sonora.ui.icon.KeyboardDoubleArrowRight
 import app.vanshajpahwa.sonora.ui.icon.MoreVert
+import app.vanshajpahwa.sonora.ui.icon.ScreenRotation
 import app.vanshajpahwa.sonora.ui.icon.Pause
 import app.vanshajpahwa.sonora.ui.icon.PlayArrow
 import app.vanshajpahwa.sonora.ui.icon.Replay5
@@ -105,9 +106,13 @@ fun FullscreenPlayer(
     showNavBar: () -> Unit = {},
 ) {
     var isFullScreen by remember { mutableStateOf(true) }
+    // A video is not always wider than it is tall, and a phone held upright should be able to
+    // stay upright. Landscape remains the default because most music videos are 16:9.
+    var landscape by rememberSaveable { mutableStateOf(true) }
     val isInPipMode = rememberIsInPipMode()
 
     FullScreenRotationImmersive(
+        landscape = landscape,
         onLaunch = {
             hideNavBar()
             isFullScreen = true
@@ -364,6 +369,11 @@ fun FullscreenPlayer(
                                 }
                             },
                             actions = {
+                                RippleIconButton(
+                                    SonoraIcons.ScreenRotation,
+                                ) {
+                                    landscape = !landscape
+                                }
                                 RippleIconButton(
                                     SonoraIcons.MoreVert,
                                 ) {
@@ -764,6 +774,7 @@ fun FullscreenPlayer(
 
 @Composable
 expect fun FullScreenRotationImmersive(
+    landscape: Boolean = true,
     onLaunch: () -> Unit = {},
     onDispose: () -> Unit = {},
 )

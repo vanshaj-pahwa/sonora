@@ -322,7 +322,6 @@ import app.vanshajpahwa.sonora.resources.openai_api_compatible
 import app.vanshajpahwa.sonora.resources.other_app
 import app.vanshajpahwa.sonora.resources.play_explicit_content
 import app.vanshajpahwa.sonora.resources.play_explicit_content_description
-import app.vanshajpahwa.sonora.resources.play_video_for_video_track_instead_of_audio_only
 import app.vanshajpahwa.sonora.resources.playback
 import app.vanshajpahwa.sonora.resources.player_cache
 import app.vanshajpahwa.sonora.resources.proxy
@@ -370,7 +369,6 @@ import app.vanshajpahwa.sonora.resources.spotify
 import app.vanshajpahwa.sonora.resources.spotify_canvas_cache
 import app.vanshajpahwa.sonora.resources.spotify_lyrícs_info
 import app.vanshajpahwa.sonora.resources.storage
-import app.vanshajpahwa.sonora.resources.such_as_music_video_lyrics_video_podcasts_and_more
 import app.vanshajpahwa.sonora.resources.theme
 import app.vanshajpahwa.sonora.resources.theme_color
 import app.vanshajpahwa.sonora.resources.theme_color_custom
@@ -497,7 +495,6 @@ fun SettingScreen(
     val localTrackingEnabled by viewModel.localTrackingEnabled.collectAsStateWithLifecycle(initialValue = false)
     val blogNotificationEnabled by viewModel.blogNotificationEnabled.collectAsStateWithLifecycle()
     val combineLocalAndYouTubeLiked by viewModel.combineLocalAndYouTubeLiked.collectAsStateWithLifecycle()
-    val playVideo by remember { viewModel.playVideoInsteadOfAudio.map { it == TRUE } }.collectAsStateWithLifecycle(initialValue = false)
     val videoQuality by viewModel.videoQuality.collectAsStateWithLifecycle()
     val sendData by remember { viewModel.sendBackToGoogle.map { it == TRUE } }.collectAsStateWithLifecycle(initialValue = false)
     val normalizeVolume by remember { viewModel.normalizeVolume.map { it == TRUE } }.collectAsStateWithLifecycle(initialValue = false)
@@ -1053,11 +1050,6 @@ fun SettingScreen(
                             ),
                         )
                     },
-                )
-                SettingItem(
-                    title = stringResource(Res.string.play_video_for_video_track_instead_of_audio_only),
-                    subtitle = stringResource(Res.string.such_as_music_video_lyrics_video_podcasts_and_more),
-                    switch = (playVideo to { viewModel.setPlayVideoInsteadOfAudio(it) }),
                 )
                 SettingItem(
                     title = stringResource(Res.string.video_quality),
@@ -2396,14 +2388,14 @@ fun SettingScreen(
                     title = stringResource(Res.string.author),
                     subtitle = stringResource(Res.string.author_name),
                     onClick = {
-                        uriHandler.openUri("https://github.com/vanshaj-pahwa")
+                        uriHandler.openUri("https://github.com/vanshaj-pahwa/sonora")
                     },
                 )
                 SettingItem(
                     title = stringResource(Res.string.developer_blog),
                     subtitle = stringResource(Res.string.developer_blog_tagline),
                     onClick = {
-                        uriHandler.openUri("https://github.com/vanshaj-pahwa")
+                        uriHandler.openUri("https://github.com/vanshaj-pahwa/sonora")
                     },
                 )
                 if (getPlatform() == Platform.Android) {

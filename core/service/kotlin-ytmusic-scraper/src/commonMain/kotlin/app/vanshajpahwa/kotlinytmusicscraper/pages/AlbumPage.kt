@@ -19,6 +19,9 @@ data class AlbumPage(
     val thumbnails: Thumbnails?,
     val duration: String?,
     val otherVersion: List<AlbumItem>,
+    // What YouTube itself calls that shelf. It is not always other versions of this album, so the
+    // heading has to come from the response rather than be assumed.
+    val otherVersionTitle: String?,
 ) {
     companion object {
         fun fromMusicTwoRowItemRenderer(renderer: MusicTwoRowItemRenderer?): AlbumItem? {

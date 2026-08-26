@@ -42,16 +42,7 @@ internal class AlbumRepositoryImpl(
     override fun getAlbumAsFlow(id: String) = localDataSource.getAlbumAsFlow(id)
 
     override fun getLikedAlbums(): Flow<List<AlbumEntity>> =
-        flow {
-            emit(
-                getFullDataFromDB { limit, offset ->
-                    localDataSource.getLikedAlbums(
-                        limit,
-                        offset,
-                    )
-                },
-            )
-        }.flowOn(Dispatchers.IO)
+        localDataSource.getLikedAlbumsAsFlow().flowOn(Dispatchers.IO)
 
     override fun insertAlbum(albumEntity: AlbumEntity) =
         flow {

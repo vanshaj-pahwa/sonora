@@ -36,6 +36,8 @@ actual fun MediaPlayerViewWithSubtitle(
     translatedLyricsData: Lyrics?,
     mainTextStyle: TextStyle,
     translatedTextStyle: TextStyle,
+    // Desktop letterboxes; the portrait crop is a phone-player concern.
+    @Suppress("UNUSED_PARAMETER") cropToBounds: Boolean,
 ) {
     MediaPlayerViewWithSubtitleJvm(
         playerName = playerName,

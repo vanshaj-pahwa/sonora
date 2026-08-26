@@ -66,6 +66,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -160,6 +161,10 @@ import app.vanshajpahwa.sonora.ui.component.ExplicitBadge
 import app.vanshajpahwa.sonora.ui.component.FullscreenLyricsSheet
 import app.vanshajpahwa.sonora.ui.component.HeartCheckBox
 import app.vanshajpahwa.sonora.ui.component.OutputDeviceButton
+import app.vanshajpahwa.sonora.resources.switch_to_audio
+import app.vanshajpahwa.sonora.resources.switch_to_video
+import app.vanshajpahwa.sonora.ui.icon.Movie
+import app.vanshajpahwa.sonora.ui.icon.MusicNote
 import app.vanshajpahwa.sonora.ui.component.InfoPlayerBottomSheet
 import app.vanshajpahwa.sonora.ui.component.LiquidGlassIconButton
 import app.vanshajpahwa.sonora.ui.component.LyricsView
@@ -979,6 +984,10 @@ fun NowPlayingScreenContent(
                     val pageTrack = artworkQueue.getOrNull(page)
                     val isCurrentArtworkPage = page == currentOrderIndex
                     val pageHasCanvas = isCurrentArtworkPage && screenDataState.canvasData != null
+                    // Video mode covers the whole player, so it takes the canvas layer rather than
+                    // the square artwork slot, and everything below reads over it through the scrim.
+                    val pageShowsVideo =
+                        isCurrentArtworkPage && screenDataState.isVideo && shouldShowVideo
 
                     // Per-page palette state for the gradient backdrop.
                     // The bitmap is fed in by Layer 2's adjacent-thumbnail AsyncImage
@@ -1052,9 +1061,30 @@ fun NowPlayingScreenContent(
                             )
                         }
 
+                        // ── Layer 1: fullscreen video backdrop (current track in video mode) ──
+                        if (pageShowsVideo) {
+                            var fullBleedSubtitle by rememberSaveable { mutableStateOf(true) }
+                            MediaPlayerViewWithSubtitle(
+                                playerName = MAIN_PLAYER,
+                                shouldShowSubtitle = fullBleedSubtitle,
+                                shouldPip = false,
+                                shouldScaleDownSubtitle = true,
+                                timelineState = timelineState,
+                                lyricsData = screenDataState.lyricsData?.lyrics,
+                                translatedLyricsData = screenDataState.lyricsData?.translatedLyrics?.first,
+                                isInPipMode = isInPipMode,
+                                mainTextStyle = typo().bodyLarge,
+                                translatedTextStyle = typo().bodyMedium,
+                                cropToBounds = true,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
                         // ── Layer 1: fullscreen canvas backdrop (current track + canvas data) ──
-                        if (pageHasCanvas) {
-                            Crossfade(targetState = screenDataState.canvasData?.isVideo) { isVideo ->
+                        if (pageHasCanvas || pageShowsVideo) {
+                            Crossfade(
+                                targetState = if (pageShowsVideo) null else screenDataState.canvasData?.isVideo,
+                            ) { isVideo ->
                                 if (isVideo == true) {
                                     screenDataState.canvasData?.url?.let { url ->
                                         MediaPlayerView(
@@ -1189,7 +1219,7 @@ fun NowPlayingScreenContent(
                                     Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp)
-                                        .alpha(if (pageHasCanvas) 0f else 1f),
+                                        .alpha(if (pageHasCanvas || pageShowsVideo) 0f else 1f),
                             ) {
                                 if (isCurrentArtworkPage) {
                                     // Live artwork (drives palette extraction via setBitmap).
@@ -1234,7 +1264,17 @@ fun NowPlayingScreenContent(
                                                     .fillMaxWidth()
                                                     .background(Color.Transparent)
                                                     .aspectRatio(
-                                                        if (!screenDataState.isVideo) 1f else 16f / 9,
+                                                        // While the video covers the page this frame
+                                                        // is invisible and exists only to be measured.
+                                                        // A shorter frame here grows the gap above the
+                                                        // title, which pushes the up next card off the
+                                                        // bottom, so it keeps the square footprint the
+                                                        // rest of the layout is balanced around.
+                                                        if (!screenDataState.isVideo || shouldShowVideo) {
+                                                            1f
+                                                        } else {
+                                                            16f / 9
+                                                        },
                                                     ).clip(
                                                         SonoraShapes.Container,
                                                     ).alpha(
@@ -1243,9 +1283,10 @@ fun NowPlayingScreenContent(
                                         )
                                     }
 
-                                    // Inline video player (current page + isVideo + shouldShowVideo).
+                                    // Inline video player, kept for the non-portrait layout only;
+                                    // portrait draws the video full bleed in the layer above.
                                     androidx.compose.animation.AnimatedVisibility(
-                                        visible = screenDataState.isVideo && shouldShowVideo,
+                                        visible = false,
                                         modifier = Modifier.align(Alignment.Center),
                                     ) {
                                         var internalShowSubtitle by rememberSaveable {
@@ -1710,6 +1751,73 @@ fun NowPlayingScreenContent(
                                                 }
                                         },
                                 ) {
+                                    // Only tracks that have a video get this. An audio release keeps its
+                                    // artwork and gains no control it cannot act on.
+                                    AnimatedVisibility(screenDataState.isVideo) {
+                                        Row(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Row(
+                                                modifier =
+                                                    Modifier
+                                                        .clip(CircleShape)
+                                                        .background(Color.Black.copy(alpha = 0.28f))
+                                                        .clickable {
+                                                            sharedViewModel.toggleVideoForCurrentTrack()
+                                                        }.padding(horizontal = 12.dp, vertical = 7.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Icon(
+                                                    imageVector =
+                                                        if (shouldShowVideo) {
+                                                            SonoraIcons.MusicNote
+                                                        } else {
+                                                            SonoraIcons.Movie
+                                                        },
+                                                    contentDescription = null,
+                                                    tint = Color.White.copy(alpha = 0.7f),
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                                Spacer(Modifier.size(8.dp))
+                                                Text(
+                                                    text =
+                                                        if (shouldShowVideo) {
+                                                            stringResource(Res.string.switch_to_audio)
+                                                        } else {
+                                                            stringResource(Res.string.switch_to_video)
+                                                        },
+                                                    style = typo().bodySmall,
+                                                    color = Color.White.copy(alpha = 0.7f),
+                                                )
+                                            }
+                                            // Landscape is only on offer once there is a video to turn.
+                                            if (shouldShowVideo) {
+                                                Spacer(Modifier.weight(1f))
+                                                Box(
+                                                    modifier =
+                                                        Modifier
+                                                            .size(34.dp)
+                                                            .clip(CircleShape)
+                                                            .background(Color.Black.copy(alpha = 0.28f))
+                                                            .clickable {
+                                                                navController.navigate(FullscreenDestination)
+                                                            },
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Icon(
+                                                        imageVector = SonoraIcons.Fullscreen,
+                                                        contentDescription = "Watch in landscape",
+                                                        tint = Color.White.copy(alpha = 0.7f),
+                                                        modifier = Modifier.size(20.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                     Row(
                                         modifier =
                                             Modifier

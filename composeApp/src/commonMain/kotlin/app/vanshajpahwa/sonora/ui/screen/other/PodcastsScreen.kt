@@ -94,10 +94,11 @@ import app.vanshajpahwa.sonora.viewModel.PodcastViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import app.vanshajpahwa.sonora.resources.Res
-import app.vanshajpahwa.sonora.resources.album_length
+import app.vanshajpahwa.sonora.resources.n_song
 import app.vanshajpahwa.sonora.resources.podcasts
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -377,10 +378,10 @@ fun PodcastScreen(
 
                                             Text(
                                                 text =
-                                                    stringResource(
-                                                        Res.string.album_length,
-                                                        data.listEpisode.size.toString(),
-                                                        "",
+                                                    pluralStringResource(
+                                                        Res.plurals.n_song,
+                                                        data.listEpisode.size,
+                                                        data.listEpisode.size,
                                                     ),
                                                 color = Color.White,
                                                 style = typo().bodyMedium,

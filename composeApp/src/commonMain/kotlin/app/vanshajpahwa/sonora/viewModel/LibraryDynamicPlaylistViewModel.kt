@@ -3,17 +3,22 @@ package app.vanshajpahwa.sonora.viewModel
 import androidx.lifecycle.viewModelScope
 import app.vanshajpahwa.common.Config
 import app.vanshajpahwa.common.Config.REMOVED_SONG_DATE_TIME
+import app.vanshajpahwa.domain.data.entities.AlbumEntity
 import app.vanshajpahwa.domain.data.entities.ArtistEntity
+import app.vanshajpahwa.domain.data.entities.PlaylistEntity
 import app.vanshajpahwa.domain.data.entities.SongEntity
 import app.vanshajpahwa.domain.mediaservice.handler.PlaylistType
 import app.vanshajpahwa.domain.mediaservice.handler.QueueData
+import app.vanshajpahwa.domain.repository.AlbumRepository
 import app.vanshajpahwa.domain.repository.ArtistRepository
+import app.vanshajpahwa.domain.repository.PlaylistRepository
 import app.vanshajpahwa.domain.repository.SongRepository
 import app.vanshajpahwa.domain.utils.toArrayListTrack
 import app.vanshajpahwa.domain.utils.toTrack
 import app.vanshajpahwa.sonora.ui.screen.library.LibraryDynamicPlaylistType
 import app.vanshajpahwa.sonora.viewModel.base.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -23,6 +28,8 @@ import app.vanshajpahwa.sonora.resources.playlist
 class LibraryDynamicPlaylistViewModel(
     private val songRepository: SongRepository,
     private val artistRepository: ArtistRepository,
+    private val albumRepository: AlbumRepository,
+    private val playlistRepository: PlaylistRepository,
 ) : BaseViewModel() {
     private val _listFavoriteSong: MutableStateFlow<List<SongEntity>> = MutableStateFlow(emptyList())
     val listFavoriteSong: StateFlow<List<SongEntity>> get() = _listFavoriteSong
@@ -36,11 +43,34 @@ class LibraryDynamicPlaylistViewModel(
     private val _listDownloadedSong: MutableStateFlow<List<SongEntity>> = MutableStateFlow(emptyList())
     val listDownloadedSong: StateFlow<List<SongEntity>> get() = _listDownloadedSong
 
+    // Favourites is every kind of favourite, not only songs. Albums and playlists are stored in
+    // their own tables, so the page has to ask for them separately and merge.
+    private val _listFavoriteCollection: MutableStateFlow<List<Any>> = MutableStateFlow(emptyList())
+    val listFavoriteCollection: StateFlow<List<Any>> get() = _listFavoriteCollection
+
     init {
         getFavoriteSong()
+        getFavoriteCollection()
         getFollowedArtist()
         getMostPlayedSong()
         getDownloadedSong()
+    }
+
+    private fun getFavoriteCollection() {
+        viewModelScope.launch {
+            combine(
+                albumRepository.getLikedAlbums(),
+                playlistRepository.getLikedPlaylists(),
+            ) { albums, playlists ->
+                (albums + playlists).sortedByDescending { item ->
+                    when (item) {
+                        is AlbumEntity -> item.favoriteAt ?: item.inLibrary
+                        is PlaylistEntity -> item.favoriteAt ?: item.inLibrary
+                        else -> null
+                    }
+                }
+            }.collectLatest { _listFavoriteCollection.value = it }
+        }
     }
 
     private fun getFavoriteSong() {

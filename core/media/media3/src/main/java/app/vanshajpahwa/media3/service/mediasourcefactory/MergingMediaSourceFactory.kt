@@ -8,6 +8,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import app.vanshajpahwa.common.MERGING_DATA_TYPE
+import app.vanshajpahwa.common.VideoPlaybackOverride
 import app.vanshajpahwa.domain.manager.DataStoreManager
 import app.vanshajpahwa.logger.Logger
 import kotlinx.coroutines.CoroutineScope
@@ -56,7 +57,9 @@ internal class MergingMediaSourceFactory(
     override fun getSupportedTypes(): IntArray = defaultMediaSourceFactory.supportedTypes
 
     override fun createMediaSource(mediaItem: MediaItem): MediaSource {
-        if (mediaItem.mediaMetadata.description == MERGING_DATA_TYPE.VIDEO && watchVideoInsteadOfAudio) {
+        // The player's own choice for this track wins; the setting is only the default.
+        val useVideo = VideoPlaybackOverride.enabled ?: watchVideoInsteadOfAudio
+        if (mediaItem.mediaMetadata.description == MERGING_DATA_TYPE.VIDEO && useVideo) {
             val videoItem =
                 mediaItem
                     .buildUpon()

@@ -5,7 +5,6 @@
     <string name="album_and_artist_name">Album • %1$s</string>
     <string name="subscribers">%1$s subscribers</string>
     <string name="year_and_category">%1$s • %2$s</string>
-    <string name="album_length">%1$s songs</string>
     <string name="view_count">%1$s views</string>
     <string name="clear_search_history">Clear search history</string>
     <string name="liked">Liked</string>
@@ -19,7 +18,8 @@
     <string name="show">Show</string>
     <string name="na_na">NA:NA</string>
     <string name="cache_size">%1$s MB</string>
-    <string name="favorite">Favorite</string>
+    <string name="favorite">Favourites</string>
+    <string name="albums_and_playlists">Albums and playlists</string>
     <string name="followed">Followed</string>
     <string name="most_played">Most Played</string>
     <string name="Downloaded">Downloaded</string>
@@ -321,12 +321,18 @@
     <string name="podcasts" translatable="false">Podcasts</string>
     <string name="featured_inArtist">Featured on</string>
     <string name="audio_quality">Audio quality</string>
-    <string name="play_video_for_video_track_instead_of_audio_only">Play the video for video tracks rather than audio only</string>
-    <string name="such_as_music_video_lyrics_video_podcasts_and_more">Applies to music videos, lyric videos, podcasts and more</string>
     <string name="video_quality">Video quality</string>
+    <plurals name="n_album">
+        <item quantity="one">%1$d album</item>
+        <item quantity="other">%1$d albums</item>
+    </plurals>
+    <plurals name="n_playlist">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
+    </plurals>
     <plurals name="n_song">
-        <item quantity="one">%d song</item>
-        <item quantity="other">%d songs</item>
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
     </plurals>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
@@ -460,7 +466,11 @@
     <string name="to_download_folder">" to Download folder"</string>
     <string name="download_speed">Download speed:  %1$s </string>
     <string name="shuffle">Shuffle</string>
-    <string name="other_version">Other version</string>
+    <string name="you_might_also_like">You might also like</string>
+    <string name="update">Update</string>
+    <string name="play_all">Play all</string>
+    <string name="switch_to_video">Switch to video</string>
+    <string name="switch_to_audio">Switch to audio</string>
     <string name="later">Later</string>
     <string name="give_a_star">Give a star</string>
     <string name="enjoying_sonora">Enjoying Sonora</string>
@@ -626,7 +636,7 @@ Read this to learn how to log in on desktop:
     <string name="import_result_skipped">%1$d entries were skipped because the file had no song for them.</string>
     <string name="import_failed">Import failed</string>
     <string name="import_invalid_file">This file is not a valid Sonora import file. Convert your library to a supported export first.</string>
-    <string name="empty_favorite">Songs you like will show up here</string>
+    <string name="empty_favorite">Anything you mark as a favourite will show up here</string>
     <string name="empty_followed">Artists you follow will show up here</string>
     <string name="empty_most_played">Songs you play most of the way through appear here. Skipping past does not count.</string>
     <string name="empty_downloaded">Downloaded songs will show up here and play offline</string>
