@@ -8,18 +8,11 @@ An ad-free YouTube Music client for Android, built with Jetpack Compose.
 
 ## Install
 
-Download an APK from the [latest release](https://github.com/vanshaj-pahwa/sonora/releases/latest).
-Sonora requires Android 8.0 or newer.
+Download `sonora-<version>.apk` from the
+[latest release](https://github.com/vanshaj-pahwa/sonora/releases/latest) and install it.
 
-| File | Choose this if |
-|---|---|
-| `sonora-<version>-arm64-v8a.apk` | You have a phone from the last several years. This covers nearly everyone |
-| `sonora-<version>-armeabi-v7a.apk` | You have an older 32-bit device |
-| `sonora-<version>-x86_64.apk` | You are using an emulator or a Chromebook |
-| `sonora-<version>-universal.apk` | You do not know which to pick. It is larger but runs on anything |
-
-There is no risk in guessing. Android will not install an APK built for a different architecture,
-so start with `arm64-v8a` and fall back to `universal`.
+Sonora needs Android 8.0 or newer on a 64-bit
+device.
 
 Android shows a warning when installing apps from outside the Play Store. This is expected for any
 sideloaded app.
@@ -30,6 +23,8 @@ sideloaded app.
 
 - Stream music and music videos from YouTube Music, ad-free, with background playback
 - Offline downloads, and playback of local files already on the device
+- An endless queue that carries on past the end of a playlist, choosing what follows from what you
+  have just been listening to
 - Crossfade between tracks, with optional beat-matched transitions
 - Equalizer, sleep timer, and SponsorBlock segment skipping
 - Podcasts
@@ -50,6 +45,7 @@ sideloaded app.
 **Interface**
 
 - Liquid glass theming, searchable settings, and a shared design system
+- Shows which device the sound is going to, so a dropped pair of earbuds announces itself
 
 ## Build
 
@@ -64,8 +60,9 @@ The APK lands in `app/build/outputs/apk/debug/`.
 There is one build. It needs no API keys, no Google Play Services and no `local.properties`
 entries: clone it and it compiles.
 
-Release builds land in `app/build/outputs/apk/release/` and are unsigned. Use
-`build-and-sign-apk.sh` to produce a signed APK.
+Release builds land in `app/build/outputs/apk/release/`. They are unsigned unless the signing
+variables are present in the environment, so `build-and-sign-apk.sh` is the way to produce a signed
+APK locally. Tagged releases are signed on CI from repository secrets.
 
 ## Credits
 
