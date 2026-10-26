@@ -119,6 +119,8 @@ import app.vanshajpahwa.sonora.ui.component.ShimmerSearchItem
 import app.vanshajpahwa.sonora.ui.component.SongFullWidthItems
 import app.vanshajpahwa.sonora.ui.icon.ArrowOutward
 import app.vanshajpahwa.sonora.ui.icon.Close
+import app.vanshajpahwa.sonora.ui.icon.Mic
+import app.vanshajpahwa.sonora.expect.ui.rememberVoiceSearchController
 import app.vanshajpahwa.sonora.ui.icon.History
 import app.vanshajpahwa.sonora.ui.icon.Search
 import app.vanshajpahwa.sonora.ui.icon.SonoraIcons
@@ -257,6 +259,7 @@ fun SearchScreen(
 
     var sheetSong by remember { mutableStateOf<SongEntity?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showVoiceSheet by remember { mutableStateOf(false) }
     val currentVideoId by searchViewModel.nowPlayingVideoId.collectAsStateWithLifecycle()
     val chipRowState = rememberScrollState()
     val pullToRefreshState = rememberPullToRefreshState()
@@ -1082,6 +1085,32 @@ fun SearchScreen(
                             },
                         ).padding(vertical = 10.dp),
             ) {
+        val submitSearch: (String) -> Unit = { query ->
+            if (query.isNotEmpty()) {
+                isSearchSubmitted = true
+                focusManager.clearFocus()
+                searchViewModel.insertSearchHistory(query)
+                when (searchScreenState.searchType) {
+                    SearchType.ALL -> searchViewModel.searchAll(query)
+                    SearchType.SONGS -> searchViewModel.searchSongs(query)
+                    SearchType.VIDEOS -> searchViewModel.searchVideos(query)
+                    SearchType.ALBUMS -> searchViewModel.searchAlbums(query)
+                    SearchType.ARTISTS -> searchViewModel.searchArtists(query)
+                    SearchType.PLAYLISTS -> searchViewModel.searchPlaylists(query)
+                    SearchType.FEATURED_PLAYLISTS -> searchViewModel.searchFeaturedPlaylist(query)
+                    SearchType.PODCASTS -> searchViewModel.searchPodcast(query)
+                }
+            }
+        }
+        val voiceSearch =
+            rememberVoiceSearchController { spoken ->
+                showVoiceSheet = false
+                searchText = spoken
+                submitSearch(spoken)
+            }
+        if (showVoiceSheet && voiceSearch != null) {
+            VoiceSearchSheet(voice = voiceSearch, onDismiss = { showVoiceSheet = false })
+        }
         // Search Bar with Animated Placeholder
         SearchBar(
             inputField = {
@@ -1090,23 +1119,7 @@ fun SearchScreen(
                     onQueryChange = { newText ->
                         searchText = newText
                     },
-                    onSearch = { query ->
-                        if (query.isNotEmpty()) {
-                            isSearchSubmitted = true
-                            focusManager.clearFocus()
-                            searchViewModel.insertSearchHistory(query)
-                            when (searchScreenState.searchType) {
-                                SearchType.ALL -> searchViewModel.searchAll(query)
-                                SearchType.SONGS -> searchViewModel.searchSongs(query)
-                                SearchType.VIDEOS -> searchViewModel.searchVideos(query)
-                                SearchType.ALBUMS -> searchViewModel.searchAlbums(query)
-                                SearchType.ARTISTS -> searchViewModel.searchArtists(query)
-                                SearchType.PLAYLISTS -> searchViewModel.searchPlaylists(query)
-                                SearchType.FEATURED_PLAYLISTS -> searchViewModel.searchFeaturedPlaylist(query)
-                                SearchType.PODCASTS -> searchViewModel.searchPodcast(query)
-                            }
-                        }
-                    },
+                    onSearch = submitSearch,
                     expanded = false,
                     onExpandedChange = {},
                     enabled = true,
@@ -1142,7 +1155,8 @@ fun SearchScreen(
                         // reachable from Home, so getting to it from here meant a trip through an
                         // unrelated tab. This is the top right corner of the screen, the same
                         // corner it occupies on Home, and putting it in the slot the clear button
-                        // already uses costs the field no width.
+                        // already uses costs the field no width. The mic sits beside it only while
+                        // the field is empty, which is the only time speaking a query makes sense.
                         if (searchText.isNotEmpty()) {
                             IconButton(
                                 modifier = Modifier.clip(CircleShape),
@@ -1157,14 +1171,27 @@ fun SearchScreen(
                                 )
                             }
                         } else {
-                            IconButton(
-                                modifier = Modifier.clip(CircleShape),
-                                onClick = { navController.navigate(SettingsDestination) },
-                            ) {
-                                Icon(
-                                    imageVector = SonoraIcons.Settings,
-                                    contentDescription = "Settings",
-                                )
+                            Row {
+                                if (voiceSearch != null) {
+                                    IconButton(
+                                        modifier = Modifier.clip(CircleShape),
+                                        onClick = { showVoiceSheet = true },
+                                    ) {
+                                        Icon(
+                                            imageVector = SonoraIcons.Mic,
+                                            contentDescription = "Voice search",
+                                        )
+                                    }
+                                }
+                                IconButton(
+                                    modifier = Modifier.clip(CircleShape),
+                                    onClick = { navController.navigate(SettingsDestination) },
+                                ) {
+                                    Icon(
+                                        imageVector = SonoraIcons.Settings,
+                                        contentDescription = "Settings",
+                                    )
+                                }
                             }
                         }
                     },

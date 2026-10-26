@@ -625,6 +625,9 @@ Read this to learn how to log in on desktop:
     <string name="home_offline_title">Couldn't load home</string>
     <string name="offline_banner">You're offline</string>
     <string name="back_online">Back online</string>
+    <string name="voice_search_listening">Listening</string>
+    <string name="voice_search_failed">Didn't catch that</string>
+    <string name="voice_search_retry">Tap the mic to try again</string>
     <string name="in_your_library">In your library</string>
     <string name="home_offline_subtitle">This can be a dropped connection or a hiccup at the other end. Try again, or play something you have downloaded.</string>
     <string name="listen_to_downloaded">Listen to downloaded music</string>
