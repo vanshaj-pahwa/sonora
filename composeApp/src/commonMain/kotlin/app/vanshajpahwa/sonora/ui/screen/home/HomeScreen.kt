@@ -120,7 +120,7 @@ import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.ui.component.HomeGutter
 import app.vanshajpahwa.sonora.ui.component.HomeArtistBubble
 import app.vanshajpahwa.sonora.ui.component.HomeFolderTile
-import app.vanshajpahwa.sonora.ui.component.HomePreviewTile
+import app.vanshajpahwa.sonora.ui.component.HomeCollageCard
 import app.vanshajpahwa.sonora.ui.component.HomeResumeCard
 import app.vanshajpahwa.sonora.ui.component.HomeSectionHeader
 import app.vanshajpahwa.sonora.ui.component.HomeShortcutTile
@@ -666,55 +666,46 @@ fun HomeScreen(
                                         }
                                         Spacer(Modifier.height(26.dp))
                                     }
-                                    // Two wide cards where three squares were. Favourites moved to
-                                    // the header, and these two now preview their top track, which a
-                                    // third-of-a-row square could never fit legibly.
-                                    // An empty tile is an empty promise. Downloaded reading zero
-                                    // took half the row to say there was nothing there, so a tile
-                                    // now appears only when it has something, the survivor takes the
-                                    // full width, and with neither the row does not draw at all.
+                                    // Local first: these open on the device with no network, so they sit in
+                                    // the local block above anything from YouTube. A card appears only when
+                                    // its list has something, and a lone card turns wide to fill the row.
                                     if (downloaded.isNotEmpty() || recent.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                        val topDownload = downloaded.firstOrNull()
-                                        val topRecent = recent.firstOrNull()
-                                        if (downloaded.isNotEmpty()) {
-                                        HomePreviewTile(
-                                            label = stringResource(Res.string.downloaded),
-                                            count = downloaded.size,
-                                            icon = SonoraIcons.DownloadForOffline,
-                                            tint = MaterialTheme.colorScheme.tertiary,
-                                            previewTitle = topDownload?.title,
-                                            previewSubtitle = topDownload?.artistName?.firstOrNull(),
-                                            previewThumbnail = topDownload?.thumbnails,
-                                            backdrop = glassBackdrop,
-                                            modifier = Modifier.weight(1f),
-                                            onClick = {
-                                                navController.navigate(
-                                                    LibraryDynamicPlaylistDestination(
-                                                        type = LibraryDynamicPlaylistType.Downloaded.toStringParams(),
-                                                    ),
+                                        val alone = downloaded.isEmpty() || recent.isEmpty()
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            if (downloaded.isNotEmpty()) {
+                                                HomeCollageCard(
+                                                    label = stringResource(Res.string.downloaded),
+                                                    count = downloaded.size,
+                                                    icon = SonoraIcons.DownloadForOffline,
+                                                    thumbnails = downloaded.map { it.thumbnails },
+                                                    wide = alone,
+                                                    glass = useGlass,
+                                                    modifier = Modifier.weight(1f),
+                                                    onClick = {
+                                                        navController.navigate(
+                                                            LibraryDynamicPlaylistDestination(
+                                                                type = LibraryDynamicPlaylistType.Downloaded.toStringParams(),
+                                                            ),
+                                                        )
+                                                    },
                                                 )
-                                            },
-                                        )
+                                            }
+                                            if (recent.isNotEmpty()) {
+                                                HomeCollageCard(
+                                                    label = stringResource(Res.string.recently_played),
+                                                    count = recent.size,
+                                                    icon = SonoraIcons.History,
+                                                    thumbnails = recent.map { it.thumbnails },
+                                                    wide = alone,
+                                                    glass = useGlass,
+                                                    modifier = Modifier.weight(1f),
+                                                    onClick = { navController.navigate(RecentlySongsDestination) },
+                                                )
+                                            }
                                         }
-                                        if (recent.isNotEmpty()) {
-                                        HomePreviewTile(
-                                            label = stringResource(Res.string.recently_played),
-                                            count = recent.size,
-                                            icon = SonoraIcons.History,
-                                            tint = MaterialTheme.colorScheme.secondary,
-                                            previewTitle = topRecent?.title,
-                                            previewSubtitle = topRecent?.artistName?.firstOrNull(),
-                                            previewThumbnail = topRecent?.thumbnails,
-                                            backdrop = glassBackdrop,
-                                            modifier = Modifier.weight(1f),
-                                            onClick = { navController.navigate(RecentlySongsDestination) },
-                                        )
-                                        }
-                                    }
                                     }
                                 }
                             }

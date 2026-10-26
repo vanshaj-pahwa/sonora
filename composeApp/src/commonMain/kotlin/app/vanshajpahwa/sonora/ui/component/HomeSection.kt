@@ -1,5 +1,7 @@
 package app.vanshajpahwa.sonora.ui.component
 
+import app.vanshajpahwa.sonora.expect.ui.rememberBackdrop
+import app.vanshajpahwa.sonora.expect.ui.layerBackdrop
 import androidx.compose.animation.Crossfade
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.foundation.background
@@ -43,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -513,5 +516,113 @@ fun SpeedDialTile(
                     .align(Alignment.BottomStart)
                     .padding(horizontal = 8.dp, vertical = 7.dp),
         )
+    }
+}
+
+/**
+ * A local collection as a square of its own artwork: four covers in a 2x2 collage, with the label
+ * and count laid over the bottom like the Speed dial tiles.
+ *
+ * With fewer than four distinct covers the ones there are repeat to fill the grid, so the card never
+ * shows an empty quarter. [wide] lays the four covers in one row for a card that has the row to
+ * itself, which fills the width without a full width square towering over the page.
+ *
+ * With [glass] the label sits on a liquid glass pill sampling the collage, in place of the dark
+ * gradient. The collage is the glass source and a sibling of the pill, never its parent.
+ */
+@Composable
+fun HomeCollageCard(
+    label: String,
+    count: Int,
+    icon: ImageVector,
+    thumbnails: List<String?>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    wide: Boolean = false,
+    glass: Boolean = false,
+) {
+    val covers = thumbnails.filterNotNull().distinct().take(4)
+    val backdrop = rememberBackdrop(Color.Black)
+    val rows = if (wide) 1 else 2
+    val columns = if (wide) 4 else 2
+    Box(
+        modifier =
+            modifier
+                .aspectRatio(if (wide) 2.4f else 1f)
+                .clip(SonoraShapes.Media)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onClick),
+    ) {
+        if (covers.isNotEmpty()) {
+            Column(modifier = Modifier.fillMaxSize().then(if (glass) Modifier.layerBackdrop(backdrop) else Modifier)) {
+                repeat(rows) { row ->
+                    Row(modifier = Modifier.weight(1f)) {
+                        repeat(columns) { column ->
+                            AsyncImage(
+                                model = covers[(row * columns + column) % covers.size],
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                placeholder = rememberHolderPainter(),
+                                error = rememberHolderPainter(),
+                                modifier = Modifier.weight(1f).fillMaxSize(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (!glass) {
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0.35f to Color.Transparent,
+                                1f to Color.Black.copy(alpha = 0.85f),
+                            ),
+                        ),
+            )
+        }
+        Row(
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .then(
+                        if (glass && covers.isNotEmpty()) {
+                            Modifier
+                                .padding(8.dp)
+                                .liquidGlass(backdrop, SonoraShapes.Media, interactive = false)
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        } else {
+                            Modifier.padding(12.dp)
+                        },
+                    ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = typo().titleSmall,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = count.toString(),
+                    style = typo().bodySmall,
+                    color = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
