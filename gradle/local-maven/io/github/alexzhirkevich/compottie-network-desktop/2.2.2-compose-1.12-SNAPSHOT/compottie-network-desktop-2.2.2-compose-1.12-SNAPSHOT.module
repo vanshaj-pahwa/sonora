@@ -1,0 +1,179 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../compottie-network/2.2.2-compose-1.12-SNAPSHOT/compottie-network-2.2.2-compose-1.12-SNAPSHOT.module",
+    "group": "io.github.alexzhirkevich",
+    "module": "compottie-network",
+    "version": "2.2.2-compose-1.12-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.3"
+    }
+  },
+  "variants": [
+    {
+      "name": "desktopApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-network-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "com.squareup.okio",
+          "module": "okio",
+          "version": {
+            "requires": "3.16.4"
+          }
+        },
+        {
+          "group": "io.ktor",
+          "module": "ktor-client-core",
+          "version": {
+            "requires": "3.4.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "url": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "size": 9656,
+          "sha512": "5221dd9f4bd422a3f4c6e2f6fc9c7a4457c0f689ed878de5cce3a0af3d7e3669b93560dc331c832b12eeddeb56916af416cf09264788f56a4b1854ed656e20e0",
+          "sha256": "34bb4edc5d6a3421382506d581535c526f54d23d7bf5a6c3cc8914d35d48fd38",
+          "sha1": "8a292b13fbf41e2d0e693a1976d6ca2457328866",
+          "md5": "64f529763850f96f7682dcabc9918b3e"
+        }
+      ]
+    },
+    {
+      "name": "desktopRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-network-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "com.squareup.okio",
+          "module": "okio",
+          "version": {
+            "requires": "3.16.4"
+          }
+        },
+        {
+          "group": "io.ktor",
+          "module": "ktor-client-core",
+          "version": {
+            "requires": "3.4.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-dot",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.compose.runtime",
+          "module": "runtime",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-serialization-json",
+          "version": {
+            "requires": "1.9.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "url": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "size": 9656,
+          "sha512": "5221dd9f4bd422a3f4c6e2f6fc9c7a4457c0f689ed878de5cce3a0af3d7e3669b93560dc331c832b12eeddeb56916af416cf09264788f56a4b1854ed656e20e0",
+          "sha256": "34bb4edc5d6a3421382506d581535c526f54d23d7bf5a6c3cc8914d35d48fd38",
+          "sha1": "8a292b13fbf41e2d0e693a1976d6ca2457328866",
+          "md5": "64f529763850f96f7682dcabc9918b3e"
+        }
+      ]
+    },
+    {
+      "name": "desktopSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "url": "compottie-network-desktop-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "size": 3290,
+          "sha512": "a416bdce351dc4b288b64bb6212cca37c08dcfa4806016eeccb777644ee8cd9ee7a2e1cb84c9c6aeb41c66dc4e3b65ad96d24a997876a12f3958324cf1c4bf5c",
+          "sha256": "de4ea9495e6b52bf5ce1e8ae1ac6981dea02752b2a41e842a26f81e9cded9d75",
+          "sha1": "f3d9240797db4b384085fc1319ed96e0eac533e1",
+          "md5": "bc570ae4c56ffddb6e84d53f13448740"
+        }
+      ]
+    }
+  ]
+}

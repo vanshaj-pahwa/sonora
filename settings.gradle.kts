@@ -21,6 +21,10 @@ dependencyResolutionManagement {
         // (oss.sonatype.org) was removed — Sonatype shut it down and its flaky 504s
         // disabled the repo set, blocking fallback to this one.
         maven("https://central.sonatype.com/repository/maven-snapshots/")
+        // compottie 2.2.2-compose-1.12-SNAPSHOT, kept in the repository. Sonatype purges old
+        // snapshots and this one was deleted, which left every clean machine, CI included, unable
+        // to resolve it. The newer builds need skiko 0.150.1, a Compose upgrade of its own.
+        maven(url = uri("gradle/local-maven"))
         maven("https://jogamp.org/deployment/maven")
         maven(url = "https://raw.githubusercontent.com/bravepipeproject/maven-repo/master/repository")
     }
