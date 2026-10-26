@@ -1,5 +1,10 @@
 package app.vanshajpahwa.sonora
 
+import app.vanshajpahwa.sonora.resources.update_download_failed
+import app.vanshajpahwa.sonora.resources.update_allow_installs
+import app.vanshajpahwa.sonora.resources.update_downloading
+import app.vanshajpahwa.sonora.expect.ui.rememberUpdateInstaller
+import app.vanshajpahwa.sonora.expect.ui.UpdateInstallState
 import androidx.compose.animation.AnimatedVisibility
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.expandHorizontally
@@ -200,6 +205,8 @@ fun App(
     var isNavBarVisible by rememberSaveable {
         mutableStateOf(true)
     }
+
+    val updateInstaller = rememberUpdateInstaller()
 
     var shouldShowUpdateDialog by rememberSaveable {
         mutableStateOf(false)
@@ -457,24 +464,43 @@ fun App(
                                                 .padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        val installState = updateInstaller?.state ?: UpdateInstallState.Idle
                                         Text(
-                                            text = stringResource(Res.string.update_available) + "  " + update.tagName,
+                                            text =
+                                                when (installState) {
+                                                    is UpdateInstallState.Downloading ->
+                                                        stringResource(Res.string.update_downloading) +
+                                                            (installState.progress?.let { "  ${(it * 100).toInt()}%" } ?: "")
+                                                    UpdateInstallState.NeedsPermission -> stringResource(Res.string.update_allow_installs)
+                                                    UpdateInstallState.Failed -> stringResource(Res.string.update_download_failed)
+                                                    UpdateInstallState.Idle ->
+                                                        stringResource(Res.string.update_available) + "  " + update.tagName
+                                                },
                                             style = typo().bodySmall,
                                             maxLines = 1,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        TextButton(
-                                            onClick = {
-                                                shouldShowUpdateDialog = false
-                                                viewModel.showedUpdateDialog = false
-                                                openUrl("https://github.com/vanshaj-pahwa/sonora/releases/latest")
-                                            },
-                                        ) {
-                                            Text(
-                                                text = stringResource(Res.string.update),
-                                                style = typo().bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                            )
+                                        // Installs in place where the release carries an APK. A failed
+                                        // download, or a release without one, falls back to the page.
+                                        if (installState !is UpdateInstallState.Downloading) {
+                                            TextButton(
+                                                onClick = {
+                                                    val apkUrl = update.apkUrl
+                                                    if (updateInstaller != null && apkUrl != null && installState != UpdateInstallState.Failed) {
+                                                        updateInstaller.install(apkUrl, update.tagName)
+                                                    } else {
+                                                        shouldShowUpdateDialog = false
+                                                        viewModel.showedUpdateDialog = false
+                                                        openUrl("https://github.com/vanshaj-pahwa/sonora/releases/latest")
+                                                    }
+                                                },
+                                            ) {
+                                                Text(
+                                                    text = stringResource(Res.string.update),
+                                                    style = typo().bodySmall,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                )
+                                            }
                                         }
                                         IconButton(
                                             onClick = {

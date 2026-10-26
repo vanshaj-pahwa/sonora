@@ -213,6 +213,9 @@
     <string name="save_last_played">Save last played</string>
     <string name="save_last_played_track_and_queue">Save last played track and queue</string>
     <string name="update_available">New update available</string>
+    <string name="update_downloading">Downloading update</string>
+    <string name="update_allow_installs">Allow installs from Sonora to continue</string>
+    <string name="update_download_failed">Download failed</string>
     <string name="update_message">Version %1$s available\nRelease: %2$s\n</string>
     <string name="check_for_update">Check for update</string>
     <string name="last_checked_at">Last checked at %1$s</string>
