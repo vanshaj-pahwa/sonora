@@ -1,5 +1,18 @@
 package app.vanshajpahwa.sonora.viewModel
 
+import app.vanshajpahwa.domain.repository.ArtistRepository
+import app.vanshajpahwa.domain.data.model.browse.album.Track
+import app.vanshajpahwa.domain.utils.toTrack
+import app.vanshajpahwa.sonora.extension.getStringBlocking
+import app.vanshajpahwa.sonora.resources.popular
+import app.vanshajpahwa.sonora.resources.shuffle
+import kotlinx.coroutines.Job
+import app.vanshajpahwa.common.Config
+import app.vanshajpahwa.domain.data.model.streams.YouTubeWatchEndpoint
+import app.vanshajpahwa.domain.mediaservice.handler.PlaylistType
+import app.vanshajpahwa.domain.mediaservice.handler.QueueData
+import app.vanshajpahwa.sonora.resources.radio
+import org.jetbrains.compose.resources.getString
 import androidx.lifecycle.viewModelScope
 import app.vanshajpahwa.common.SELECTED_LANGUAGE
 import app.vanshajpahwa.domain.data.entities.SearchHistory
@@ -104,6 +117,7 @@ class SearchViewModel(
     private val commonRepository: CommonRepository,
     private val moodArtworkStore: MoodArtworkStore,
     private val songRepository: SongRepository,
+    private val artistRepository: ArtistRepository,
 ) : BaseViewModel() {
     /**
      * Matches from the user's own library, shown above the network results.
@@ -566,6 +580,104 @@ class SearchViewModel(
         }
     }
 
+    /**
+     * What the artist top result shows beyond the search row: an audience line and the artist's
+     * popular songs.
+     *
+     * Search returns an artist as a name, a picture and endpoint ids, nothing more, so this is one
+     * artist fetch, made only when an artist wins the top result. The card draws from the search row
+     * at once and fills in when this lands.
+     */
+    private val _artistSpotlight = MutableStateFlow<ArtistSpotlight?>(null)
+    val artistSpotlight: StateFlow<ArtistSpotlight?> = _artistSpotlight
+    private var spotlightJob: Job? = null
+
+    fun loadArtistSpotlight(channelId: String) {
+        if (_artistSpotlight.value?.channelId == channelId) return
+        spotlightJob?.cancel()
+        _artistSpotlight.value = null
+        spotlightJob =
+            viewModelScope.launch {
+                artistRepository.getArtistData(channelId).collect { browse ->
+                    val data = browse.data
+                    _artistSpotlight.value =
+                        if (browse is Resource.Success && data != null) {
+                            ArtistSpotlight(
+                                channelId = channelId,
+                                name = data.name,
+                                subscribers = data.subscribers,
+                                audience = data.views,
+                                topSongs = data.songs?.results.orEmpty().take(5).map { it.toTrack() },
+                                shuffle = data.shuffleId,
+                            )
+                        } else {
+                            // Settles the card's loading state; without it the skeleton would stay.
+                            ArtistSpotlight(channelId, "", null, null, emptyList(), null)
+                        }
+                }
+            }
+    }
+
+    /** Start radio on the artist top result: the same radio the artist page starts. */
+    fun startArtistRadio(artist: ArtistsResult) {
+        if (artist.radioId.isBlank()) return
+        playEndpoint(YouTubeWatchEndpoint(playlistId = artist.radioId), "\"${artist.artist}\" ${getStringBlocking(Res.string.radio)}")
+    }
+
+    fun shuffleArtist(spotlight: ArtistSpotlight) {
+        val endpoint = spotlight.shuffle ?: return
+        playEndpoint(endpoint, "\"${spotlight.name}\" ${getStringBlocking(Res.string.shuffle)}")
+    }
+
+    /** One of the top songs inside the card, with the rest of them queued behind it. */
+    fun playSpotlightSong(
+        spotlight: ArtistSpotlight,
+        index: Int,
+    ) {
+        val track = spotlight.topSongs.getOrNull(index) ?: return
+        viewModelScope.launch {
+            setQueueData(
+                QueueData.Data(
+                    listTracks = ArrayList(spotlight.topSongs),
+                    firstPlayedTrack = track,
+                    playlistId = null,
+                    playlistName = "\"${spotlight.name}\" ${getString(Res.string.popular)}",
+                    playlistType = PlaylistType.RADIO,
+                    continuation = null,
+                ),
+            )
+            loadMediaItem(track, Config.PLAYLIST_CLICK, index)
+        }
+    }
+
+    private fun playEndpoint(
+        endpoint: YouTubeWatchEndpoint,
+        label: String,
+    ) {
+        viewModelScope.launch {
+            songRepository.getRadioFromEndpoint(endpoint).collectLatest { res ->
+                val data = res.data
+                when (res) {
+                    is Resource.Success if data != null && data.first.isNotEmpty() -> {
+                        setQueueData(
+                            QueueData.Data(
+                                listTracks = data.first,
+                                firstPlayedTrack = data.first.first(),
+                                playlistId = endpoint.playlistId,
+                                playlistName = label,
+                                playlistType = PlaylistType.RADIO,
+                                continuation = data.second,
+                            ),
+                        )
+                        loadMediaItem(data.first.first(), Config.PLAYLIST_CLICK, 0)
+                    }
+
+                    else -> makeToast(res.message)
+                }
+            }
+        }
+    }
+
     fun setSearchType(searchType: SearchType) {
         _searchScreenState.update { state ->
             state.copy(searchType = searchType)
@@ -578,3 +690,12 @@ private const val LOCAL_SEARCH_DEBOUNCE_MS = 150L
 
 /** Enough to be useful as a header section without pushing the network results off screen. */
 private const val LOCAL_SEARCH_LIMIT = 10
+
+data class ArtistSpotlight(
+    val channelId: String,
+    val name: String,
+    val subscribers: String?,
+    val audience: String?,
+    val topSongs: List<Track>,
+    val shuffle: YouTubeWatchEndpoint?,
+)

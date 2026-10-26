@@ -1,5 +1,7 @@
 package app.vanshajpahwa.sonora.ui.component
 
+import app.vanshajpahwa.sonora.expect.ui.rememberBackdrop
+import app.vanshajpahwa.sonora.expect.ui.layerBackdrop
 import androidx.compose.animation.Crossfade
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.foundation.background
@@ -7,15 +9,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -28,13 +34,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,7 +73,7 @@ fun HomeSectionHeader(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
     // The part of the title that names something specific, drawn as if marked by hand. Null leaves
-    // the header plain, which is right for a fixed heading like Your rotation.
+    // the header plain, which is right for a fixed heading like Speed dial.
     underline: String? = null,
 ) {
     val accent = MaterialTheme.colorScheme.primary
@@ -264,6 +275,354 @@ fun <T> HomeTripletRow(
         // full width, which would make one section's cards a different size from every other one.
         repeat(3 - items.take(3).size) {
             Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/**
+ * Speed dial heading: the signed in account above the title, and a chevron into the full list.
+ *
+ * Without an account the avatar and name are left out and the title stands alone.
+ */
+@Composable
+fun SpeedDialHeader(
+    title: String,
+    accountName: String?,
+    accountThumbnail: String?,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpen)
+                .padding(horizontal = HomeGutter, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val name = accountName?.takeIf { it.isNotBlank() }
+        if (name != null) {
+            AsyncImage(
+                model = accountThumbnail,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                placeholder = rememberHolderPainter(),
+                error = rememberHolderPainter(),
+                modifier = Modifier.size(32.dp).clip(CircleShape),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            if (name != null) {
+                Text(
+                    text = name.uppercase(),
+                    style = typo().bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = title,
+                style = typo().headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+            )
+        }
+        Icon(
+            imageVector = SonoraIcons.ArrowForwardIos,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+/**
+ * Pages of a 3x3 artwork grid, swiped sideways, with page dots under it.
+ *
+ * The last cell of the first page is [dice], so it is on screen without swiping. With fewer than
+ * eight items it follows the last one instead, and a short row keeps its tiles at full grid size
+ * instead of stretching them.
+ */
+@Composable
+fun <T : Any> SpeedDialGrid(
+    items: List<T>,
+    modifier: Modifier = Modifier,
+    dice: @Composable () -> Unit,
+    tile: @Composable (T) -> Unit,
+) {
+    if (items.isEmpty()) return
+    // null marks the dice cell. Past the first page only whole pages are kept: the pager takes the
+    // height of its tallest page, so a one row last page sat above two rows of empty space.
+    val cells: List<T?> = items.take(8) + listOf(null) + items.drop(8)
+    val pages = cells.chunked(9).let { all -> listOf(all.first()) + all.drop(1).filter { it.size == 9 } }
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = HomeGutter),
+            pageSpacing = 12.dp,
+            verticalAlignment = Alignment.Top,
+        ) { page ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                pages[page].chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        row.forEach { item ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (item == null) dice() else tile(item)
+                            }
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+        if (pages.size > 1) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+            ) {
+                repeat(pages.size) { index ->
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (index == pagerState.currentPage) {
+                                        MaterialTheme.colorScheme.onBackground
+                                    } else {
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)
+                                    },
+                                ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The dice cell of Speed dial: a die over a gradient, labelled like the tiles around it. Tapping it
+ * plays at random.
+ */
+@Composable
+fun SpeedDialDiceTile(
+    label: String,
+    onClick: () -> Unit,
+) {
+    val face = MaterialTheme.colorScheme.onPrimaryContainer
+    val pip = MaterialTheme.colorScheme.primaryContainer
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(SonoraShapes.Media)
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                        ),
+                    ),
+                ).clickable(onClick = onClick),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .offset(y = (-8).dp)
+                    .fillMaxSize(0.42f)
+                    .rotate(-14f)
+                    .shadow(10.dp, RoundedCornerShape(22))
+                    .background(face, RoundedCornerShape(22))
+                    .drawBehind {
+                        val radius = size.minDimension * 0.1f
+                        listOf(0.27f, 0.5f, 0.73f).forEach { f ->
+                            drawCircle(color = pip, radius = radius, center = Offset(size.width * f, size.height * f))
+                        }
+                    },
+        )
+        Text(
+            text = label,
+            style = typo().bodyMedium.copy(fontWeight = FontWeight.Medium),
+            color = Color.White,
+            maxLines = 1,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+        )
+    }
+}
+
+@Composable
+fun SpeedDialTile(
+    title: String,
+    thumbnail: String?,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(SonoraShapes.Media)
+                .clickable(onClick = onClick),
+    ) {
+        AsyncImage(
+            model = thumbnail,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            placeholder = rememberHolderPainter(),
+            error = rememberHolderPainter(),
+            modifier = Modifier.fillMaxSize(),
+        )
+        // Bottom half only, so the title stays legible on bright art without dimming the whole tile.
+        Box(
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0.45f to Color.Transparent,
+                            1f to Color.Black.copy(alpha = 0.75f),
+                        ),
+                    ),
+        )
+        if (isPlaying) {
+            NowPlayingIndicator(
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .size(40.dp),
+            )
+        }
+        Text(
+            text = title,
+            style = typo().bodyMedium.copy(fontWeight = FontWeight.Medium),
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 8.dp, vertical = 7.dp),
+        )
+    }
+}
+
+/**
+ * A local collection as a square of its own artwork: four covers in a 2x2 collage, with the label
+ * and count laid over the bottom like the Speed dial tiles.
+ *
+ * With fewer than four distinct covers the ones there are repeat to fill the grid, so the card never
+ * shows an empty quarter. [wide] lays the four covers in one row for a card that has the row to
+ * itself, which fills the width without a full width square towering over the page.
+ *
+ * With [glass] the label sits on a liquid glass pill sampling the collage, in place of the dark
+ * gradient. The collage is the glass source and a sibling of the pill, never its parent.
+ */
+@Composable
+fun HomeCollageCard(
+    label: String,
+    count: Int,
+    icon: ImageVector,
+    thumbnails: List<String?>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    wide: Boolean = false,
+    glass: Boolean = false,
+) {
+    val covers = thumbnails.filterNotNull().distinct().take(4)
+    val backdrop = rememberBackdrop(Color.Black)
+    val rows = if (wide) 1 else 2
+    val columns = if (wide) 4 else 2
+    Box(
+        modifier =
+            modifier
+                .aspectRatio(if (wide) 2.4f else 1f)
+                .clip(SonoraShapes.Media)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onClick),
+    ) {
+        if (covers.isNotEmpty()) {
+            Column(modifier = Modifier.fillMaxSize().then(if (glass) Modifier.layerBackdrop(backdrop) else Modifier)) {
+                repeat(rows) { row ->
+                    Row(modifier = Modifier.weight(1f)) {
+                        repeat(columns) { column ->
+                            AsyncImage(
+                                model = covers[(row * columns + column) % covers.size],
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                placeholder = rememberHolderPainter(),
+                                error = rememberHolderPainter(),
+                                modifier = Modifier.weight(1f).fillMaxSize(),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (!glass) {
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0.35f to Color.Transparent,
+                                1f to Color.Black.copy(alpha = 0.85f),
+                            ),
+                        ),
+            )
+        }
+        Row(
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .then(
+                        if (glass && covers.isNotEmpty()) {
+                            Modifier
+                                .padding(8.dp)
+                                .liquidGlass(backdrop, SonoraShapes.Media, interactive = false)
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        } else {
+                            Modifier.padding(12.dp)
+                        },
+                    ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = typo().titleSmall,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = count.toString(),
+                    style = typo().bodySmall,
+                    color = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1,
+                )
+            }
         }
     }
 }

@@ -6,22 +6,31 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+enum class ConnectionStatus {
+    Online,
+    Offline,
+
+    /** Briefly, after Offline, so the recovery is acknowledged before the bar goes away. */
+    BackOnline,
+}
 
 /**
- * Whether the last remote fetch came back, shared app wide.
+ * Whether the app can reach the network, shared app wide.
  *
- * A single boolean rather than a connectivity API on purpose. Nothing in this app has ever asked
- * the system whether it has a network, and the honest signal available is simply whether the
- * requests we made returned. That is also the signal a user cares about: an unreachable backend and
- * a dropped connection look identical from the sofa.
+ * Two signals feed it. The system's default network says when the connection drops and when a
+ * validated one comes back, which is what lets the bar react without a tap. Remote fetches still
+ * report too, because a network can be up while every request fails, and from the sofa an
+ * unreachable backend and a dropped connection look the same.
  *
  * Held here rather than on a screen's view model because the bar that reports it lives in the app
  * scaffold next to the mini player, outside any one screen's composition.
  */
 class RemoteFeedHealth {
-    private val _unreachable = MutableStateFlow(false)
+    private val _status = MutableStateFlow(ConnectionStatus.Online)
 
-    val unreachable: StateFlow<Boolean> = _unreachable.asStateFlow()
+    val status: StateFlow<ConnectionStatus> = _status.asStateFlow()
 
     /**
      * Report the outcome of a remote fetch.
@@ -30,7 +39,35 @@ class RemoteFeedHealth {
      * saying otherwise while shelves sit on screen was the exact complaint that started this.
      */
     fun report(allRequestsFailed: Boolean) {
-        _unreachable.value = allRequestsFailed
+        _status.update { current ->
+            when {
+                allRequestsFailed -> ConnectionStatus.Offline
+                current == ConnectionStatus.Offline -> ConnectionStatus.BackOnline
+                else -> current
+            }
+        }
+    }
+
+    fun onNetworkLost() {
+        _status.value = ConnectionStatus.Offline
+    }
+
+    /** A validated network appeared. Retries the feed, so Home fills in without a tap. */
+    fun onNetworkAvailable() {
+        var recovered = false
+        _status.update { current ->
+            if (current == ConnectionStatus.Offline) {
+                recovered = true
+                ConnectionStatus.BackOnline
+            } else {
+                current
+            }
+        }
+        if (recovered) requestRetry()
+    }
+
+    fun backOnlineShown() {
+        _status.update { if (it == ConnectionStatus.BackOnline) ConnectionStatus.Online else it }
     }
 
     private val _retries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)

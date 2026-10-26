@@ -1,0 +1,130 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../compottie/2.2.2-compose-1.12-SNAPSHOT/compottie-2.2.2-compose-1.12-SNAPSHOT.module",
+    "group": "io.github.alexzhirkevich",
+    "module": "compottie",
+    "version": "2.2.2-compose-1.12-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.3"
+    }
+  },
+  "variants": [
+    {
+      "name": "desktopApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "url": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "size": 129907,
+          "sha512": "37431231fd69819d1dc3002f400d65d523c2f2b2146fea9b076b67c86d587aa9fb257ea7f3c5ac62839252d3777ba80c1f36d627a4063b05afb307581eb5e6a3",
+          "sha256": "fccd4193b9894ea4a76e68d9a07e34502df61814c7df9eb30abdd26192e80c2d",
+          "sha1": "f77d86e993c223365873d3b9f7d1fc170e1215be",
+          "md5": "d891f3e36b97f0c9a7a0aa15fde6af2e"
+        }
+      ]
+    },
+    {
+      "name": "desktopRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        },
+        {
+          "group": "org.jetbrains.compose.foundation",
+          "module": "foundation",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          }
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "keight",
+          "version": {
+            "requires": "0.0.05"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "url": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "size": 129907,
+          "sha512": "37431231fd69819d1dc3002f400d65d523c2f2b2146fea9b076b67c86d587aa9fb257ea7f3c5ac62839252d3777ba80c1f36d627a4063b05afb307581eb5e6a3",
+          "sha256": "fccd4193b9894ea4a76e68d9a07e34502df61814c7df9eb30abdd26192e80c2d",
+          "sha1": "f77d86e993c223365873d3b9f7d1fc170e1215be",
+          "md5": "d891f3e36b97f0c9a7a0aa15fde6af2e"
+        }
+      ]
+    },
+    {
+      "name": "desktopSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "url": "compottie-desktop-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "size": 10618,
+          "sha512": "38d13eb63b2cef2ad6c2b3a0e70a43391f58b1d7e1603db6a5f3471ccf788f19e1b43c6ae0996423d3a7b979c16f923f78df752f916f18093cdf7e16dcecd095",
+          "sha256": "5321c9225d434f05ed9039c87d4a37f581a255f55cf37cf7bdfdcc54599bfc58",
+          "sha1": "e81053530e45701c4e53660a9ced6a4e5644193c",
+          "md5": "dde0e39cb65228ad85c0ad759dbde3ca"
+        }
+      ]
+    }
+  ]
+}

@@ -521,12 +521,11 @@ object MEDIA_CUSTOM_COMMAND {
 object MEDIA_NOTIFICATION {
     const val NOTIFICATION_ID = 200
     const val NOTIFICATION_CHANNEL_NAME = "Sonora Playback Notification"
+    // Android keeps a channel in system settings until it is explicitly deleted, so changing this
+    // id leaves a stale playback channel behind. Delete the old one at startup if it ever changes,
+    // and never delete the live id: Android refuses while its foreground service notification is
+    // up and the app crashes in Application.onCreate.
     const val NOTIFICATION_CHANNEL_ID = "Sonora Playback Notification ID"
-
-    // Android keeps a channel in system settings until it is explicitly deleted, so changing the id
-    // above without removing the old one leaves the user looking at two playback channels. Deleted
-    // once at startup; see SonoraApplication.
-    const val LEGACY_NOTIFICATION_CHANNEL_ID = "Sonora Playback Notification ID"
 }
 
 const val SETTINGS_FILENAME = "settings"

@@ -1,5 +1,10 @@
 package app.vanshajpahwa.sonora
 
+import app.vanshajpahwa.sonora.resources.update_download_failed
+import app.vanshajpahwa.sonora.resources.update_allow_installs
+import app.vanshajpahwa.sonora.resources.update_downloading
+import app.vanshajpahwa.sonora.expect.ui.rememberUpdateInstaller
+import app.vanshajpahwa.sonora.expect.ui.UpdateInstallState
 import androidx.compose.animation.AnimatedVisibility
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.expandHorizontally
@@ -76,7 +81,10 @@ import app.vanshajpahwa.sonora.expect.openUrl
 import app.vanshajpahwa.sonora.expect.ui.layerBackdrop
 import app.vanshajpahwa.sonora.expect.ui.rememberBackdrop
 import app.vanshajpahwa.sonora.extension.copy
-import app.vanshajpahwa.sonora.ui.component.OfflineBanner
+import app.vanshajpahwa.sonora.ui.component.ConnectionBanner
+import app.vanshajpahwa.sonora.expect.ui.ObserveNetwork
+import app.vanshajpahwa.sonora.viewModel.ConnectionStatus
+import kotlinx.coroutines.delay
 import app.vanshajpahwa.sonora.ui.component.AppBottomNavigationBar
 import app.vanshajpahwa.sonora.ui.component.AppNavigationRail
 import app.vanshajpahwa.sonora.ui.component.LiquidGlassAppBottomNavigationBar
@@ -142,7 +150,21 @@ fun App(
     viewModel: SharedViewModel = koinInject(),
     remoteFeedHealth: RemoteFeedHealth = koinInject(),
 ) {
-    val isRemoteUnreachable by remoteFeedHealth.unreachable.collectAsStateWithLifecycle()
+    val connectionStatus by remoteFeedHealth.status.collectAsStateWithLifecycle()
+    // What the bar last said, kept while it animates out. Reading connectionStatus directly would
+    // repaint a leaving "Back online" bar as offline for the length of the exit animation.
+    var shownConnectionStatus by remember { mutableStateOf(ConnectionStatus.Offline) }
+    if (connectionStatus != ConnectionStatus.Online) shownConnectionStatus = connectionStatus
+    ObserveNetwork(
+        onAvailable = { remoteFeedHealth.onNetworkAvailable() },
+        onLost = { remoteFeedHealth.onNetworkLost() },
+    )
+    LaunchedEffect(connectionStatus) {
+        if (connectionStatus == ConnectionStatus.BackOnline) {
+            delay(2_500)
+            remoteFeedHealth.backOnlineShown()
+        }
+    }
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
     val navController = rememberNavController()
 
@@ -173,10 +195,7 @@ fun App(
         }
     }
 
-    // Now playing screen
-    var isShowNowPlaylistScreen by rememberSaveable {
-        mutableStateOf(false)
-    }
+    val isShowNowPlaylistScreen by viewModel.isNowPlayingOpen.collectAsStateWithLifecycle()
 
     // Fullscreen
     var isInFullscreen by rememberSaveable {
@@ -186,6 +205,8 @@ fun App(
     var isNavBarVisible by rememberSaveable {
         mutableStateOf(true)
     }
+
+    val updateInstaller = rememberUpdateInstaller()
 
     var shouldShowUpdateDialog by rememberSaveable {
         mutableStateOf(false)
@@ -332,7 +353,7 @@ fun App(
     LaunchedEffect(navBackStackEntry) {
         Logger.d("MainActivity", "Current destination: ${navBackStackEntry?.destination?.route}")
         if (navBackStackEntry?.destination?.route?.contains("FullscreenDestination") == true) {
-            isShowNowPlaylistScreen = false
+            viewModel.setNowPlayingOpen(false)
         }
         isInFullscreen = navBackStackEntry?.destination?.hierarchy?.any {
             it.hasRoute(FullscreenDestination::class)
@@ -372,7 +393,7 @@ fun App(
                                     navController = navController,
                                     backdrop = backdrop,
                                     viewModel = viewModel,
-                                    onOpenNowPlaying = { isShowNowPlaylistScreen = true },
+                                    onOpenNowPlaying = { viewModel.setNowPlayingOpen(true) },
                                     isScrolledToTop = isScrolledToTop,
                                 ) { klass ->
                                     viewModel.reloadDestination(klass)
@@ -396,7 +417,7 @@ fun App(
                                                         .padding(bottom = 4.dp),
                                                     backdrop = backdrop,
                                                     onClick = {
-                                                        isShowNowPlaylistScreen = true
+                                                        viewModel.setNowPlayingOpen(true)
                                                     },
                                                     onClose = {
                                                         viewModel.stopPlayer()
@@ -415,12 +436,14 @@ fun App(
                             // popped in: the bar appears while the user is mid scroll and a sudden
                             // layout jump under the thumb reads as a glitch.
                             AnimatedVisibility(
-                                visible = isRemoteUnreachable,
+                                visible = connectionStatus != ConnectionStatus.Online,
                                 enter = expandVertically() + fadeIn(),
                                 exit = shrinkVertically() + fadeOut(),
                             ) {
-                                OfflineBanner(
+                                ConnectionBanner(
+                                    backOnline = shownConnectionStatus == ConnectionStatus.BackOnline,
                                     onRetry = { remoteFeedHealth.requestRetry() },
+                                    backdrop = backdrop.takeIf { isLiquidGlassEnabled == TRUE && getPlatform() == Platform.Android },
                                     modifier =
                                         Modifier
                                             .padding(horizontal = 12.dp)
@@ -441,24 +464,43 @@ fun App(
                                                 .padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        val installState = updateInstaller?.state ?: UpdateInstallState.Idle
                                         Text(
-                                            text = stringResource(Res.string.update_available) + "  " + update.tagName,
+                                            text =
+                                                when (installState) {
+                                                    is UpdateInstallState.Downloading ->
+                                                        stringResource(Res.string.update_downloading) +
+                                                            (installState.progress?.let { "  ${(it * 100).toInt()}%" } ?: "")
+                                                    UpdateInstallState.NeedsPermission -> stringResource(Res.string.update_allow_installs)
+                                                    UpdateInstallState.Failed -> stringResource(Res.string.update_download_failed)
+                                                    UpdateInstallState.Idle ->
+                                                        stringResource(Res.string.update_available) + "  " + update.tagName
+                                                },
                                             style = typo().bodySmall,
                                             maxLines = 1,
                                             modifier = Modifier.weight(1f),
                                         )
-                                        TextButton(
-                                            onClick = {
-                                                shouldShowUpdateDialog = false
-                                                viewModel.showedUpdateDialog = false
-                                                openUrl("https://github.com/vanshaj-pahwa/sonora/releases/latest")
-                                            },
-                                        ) {
-                                            Text(
-                                                text = stringResource(Res.string.update),
-                                                style = typo().bodySmall,
-                                                color = MaterialTheme.colorScheme.primary,
-                                            )
+                                        // Installs in place where the release carries an APK. A failed
+                                        // download, or a release without one, falls back to the page.
+                                        if (installState !is UpdateInstallState.Downloading) {
+                                            TextButton(
+                                                onClick = {
+                                                    val apkUrl = update.apkUrl
+                                                    if (updateInstaller != null && apkUrl != null && installState != UpdateInstallState.Failed) {
+                                                        updateInstaller.install(apkUrl, update.tagName)
+                                                    } else {
+                                                        shouldShowUpdateDialog = false
+                                                        viewModel.showedUpdateDialog = false
+                                                        openUrl("https://github.com/vanshaj-pahwa/sonora/releases/latest")
+                                                    }
+                                                },
+                                            ) {
+                                                Text(
+                                                    text = stringResource(Res.string.update),
+                                                    style = typo().bodySmall,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                )
+                                            }
                                         }
                                         IconButton(
                                             onClick = {
@@ -527,7 +569,7 @@ fun App(
                                         isNavBarVisible = true
                                     },
                                     showNowPlayingSheet = {
-                                        isShowNowPlaylistScreen = true
+                                        viewModel.setNowPlayingOpen(true)
                                     },
                                     onScrolling = {
                                         isScrolledToTop = it
@@ -577,7 +619,7 @@ fun App(
                                     },
                                     backdrop = backdrop,
                                     onClick = {
-                                        isShowNowPlaylistScreen = true
+                                        viewModel.setNowPlayingOpen(true)
                                     },
                                     onClose = {
                                         viewModel.stopPlayer()
@@ -617,7 +659,7 @@ fun App(
                                                 isExpanded = true,
                                                 dismissIcon = SonoraIcons.ArrowForwardIos,
                                             ) {
-                                                isShowNowPlaylistScreen = false
+                                                viewModel.setNowPlayingOpen(false)
                                             }
                                         }
                                     }
@@ -632,7 +674,7 @@ fun App(
                         NowPlayingScreen(
                             navController = navController,
                         ) {
-                            isShowNowPlaylistScreen = false
+                            viewModel.setNowPlayingOpen(false)
                         }
                     }
                 }
@@ -674,58 +716,6 @@ fun App(
                 }
 
 
-                if (showNotificationPermissionDialog) {
-                    var doNotShowAgain by remember { mutableStateOf(false) }
-                    AlertDialog(
-                        onDismissRequest = {
-                            viewModel.dismissNotificationPermissionDialog(doNotShowAgain)
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    viewModel.dismissNotificationPermissionDialog(doNotShowAgain)
-                                },
-                            ) {
-                                Text(
-                                    stringResource(Res.string.yes),
-                                    style = typo().bodySmall,
-                                )
-                            }
-                        },
-                        title = {
-                            Text(
-                                stringResource(Res.string.notification),
-                                style = typo().labelSmall,
-                            )
-                        },
-                        text = {
-                            Column {
-                                Text(
-                                    stringResource(Res.string.this_app_needs_to_access_your_notification),
-                                    style = typo().bodySmall,
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier =
-                                        Modifier
-                                            .clickable { doNotShowAgain = !doNotShowAgain }
-                                            .fillMaxWidth(),
-                                ) {
-                                    Checkbox(
-                                        checked = doNotShowAgain,
-                                        onCheckedChange = { doNotShowAgain = it },
-                                    )
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(
-                                        stringResource(Res.string.do_not_show_again),
-                                        style = typo().bodySmall,
-                                    )
-                                }
-                            }
-                        },
-                    )
-                }
             },
         )
     }

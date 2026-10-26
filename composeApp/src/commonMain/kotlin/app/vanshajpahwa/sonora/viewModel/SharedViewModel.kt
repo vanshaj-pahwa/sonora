@@ -134,6 +134,16 @@ class SharedViewModel(
 
     var isServiceRunning: Boolean = false
 
+    // Kept here rather than in rememberSaveable. Saved instance state survives process death and
+    // the player does not, so a saved flag reopened Now Playing over an empty queue on relaunch.
+    // This object lives exactly as long as the player state it presents.
+    private val _isNowPlayingOpen = MutableStateFlow(false)
+    val isNowPlayingOpen: StateFlow<Boolean> = _isNowPlayingOpen
+
+    fun setNowPlayingOpen(open: Boolean) {
+        _isNowPlayingOpen.value = open
+    }
+
     private var _sleepTimerState = MutableStateFlow(SleepTimerState(false, 0))
     val sleepTimerState: StateFlow<SleepTimerState> = _sleepTimerState
 
@@ -333,6 +343,7 @@ class SharedViewModel(
                                             data?.playlistName.orEmpty()
                                         }
                                     },
+                                playlistType = mediaPlayerHandler.queueData.value?.data?.playlistType,
                             )
                     }
                     state.mediaItem.let { now ->
@@ -469,7 +480,9 @@ class SharedViewModel(
                             } else {
                                 data?.playlistName.orEmpty()
                             }
-                        _nowPlayingScreenData.update { it.copy(playlistName = name) }
+                        _nowPlayingScreenData.update {
+                            it.copy(playlistName = name, playlistType = data?.playlistType)
+                        }
                     }
                 }
             job1.join()
@@ -988,14 +1001,8 @@ class SharedViewModel(
      * stops the network call at its single choke point, which covers all three callers: the
      * automatic check on startup, the manual button in Settings, and the desktop startup check.
      */
-    fun checkForUpdate() {
-        _isCheckingUpdate.value = false
-        _updateResponse.value = null
-        showedUpdateDialog = false
-    }
 
-    @Suppress("unused")
-    private fun checkForUpdateDisabled() {
+    fun checkForUpdate() {
         viewModelScope.launch {
             _isCheckingUpdate.value = true
             val updateChannel = dataStoreManager.updateChannel.first()
@@ -2084,6 +2091,9 @@ enum class LyricsProvider {
 
 data class NowPlayingScreenData(
     val playlistName: String,
+    // What kind of queue the name belongs to. A radio is named after the song it grew from, which
+    // reads as though that one song is playing unless the header can say otherwise.
+    val playlistType: PlaylistType? = null,
     val nowPlayingTitle: String,
     val artistName: String,
     val isVideo: Boolean,

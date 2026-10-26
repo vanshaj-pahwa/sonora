@@ -1,0 +1,226 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../compottie-resources/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-2.2.2-compose-1.12-SNAPSHOT.module",
+    "group": "io.github.alexzhirkevich",
+    "module": "compottie-resources",
+    "version": "2.2.2-compose-1.12-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.3"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-resources-release.aar",
+          "url": "compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT.aar",
+          "size": 27340,
+          "sha512": "c61370a64438e534679155e793192db9e9e07d3928ae0cf7f281c5ba50d0f3b53153b573f43dc19f061138a3f6bc17c6464f05f46708c39043a966cd6612d4f7",
+          "sha256": "e0c825c47e9586ada27694f061071ef783ce34a24bbcbe44ed66bdbff0605222",
+          "sha1": "f35f7a3924f71f182c95d3313edc7918c1581812",
+          "md5": "dae8c2302fd23ba6895b7872f5c2e3a8"
+        }
+      ]
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-dot",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.compose.ui",
+          "module": "ui",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.compose.components",
+          "module": "components-resources",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          },
+          "excludes": [
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-stdlib-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-common"
+            },
+            {
+              "group": "org.jetbrains.kotlin",
+              "module": "kotlin-test-annotations-common"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-resources-release.aar",
+          "url": "compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT.aar",
+          "size": 27340,
+          "sha512": "c61370a64438e534679155e793192db9e9e07d3928ae0cf7f281c5ba50d0f3b53153b573f43dc19f061138a3f6bc17c6464f05f46708c39043a966cd6612d4f7",
+          "sha256": "e0c825c47e9586ada27694f061071ef783ce34a24bbcbe44ed66bdbff0605222",
+          "sha1": "f35f7a3924f71f182c95d3313edc7918c1581812",
+          "md5": "dae8c2302fd23ba6895b7872f5c2e3a8"
+        }
+      ]
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "files": [
+        {
+          "name": "compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "url": "compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "size": 8348,
+          "sha512": "e65183f75d7e00c76f829fcc6fb7d6c542ee110f8ff5e614b42d5974f40b87134ed8f9eff4c47576b7e4fa099b3473bf8ec2ff2879ae0ea46582114f4c8cfb58",
+          "sha256": "ad007bb8dad5a94e47df24d4b2e6c66069051daa83f438bd77b01645ddcf3988",
+          "sha1": "672b61b9b03171929480ba30f03e1876f796119c",
+          "md5": "4c133c0c383e08b84cd8ed01a0572e4f"
+        }
+      ]
+    }
+  ]
+}

@@ -34,6 +34,10 @@ internal class UpdateRepositoryImpl(
                                     tagName = tag,
                                     releaseTime = response.publishedAt,
                                     body = response.body.orEmpty(),
+                                    apkUrl =
+                                        response.assets
+                                            ?.firstOrNull { it?.name?.endsWith(".apk") == true }
+                                            ?.browserDownloadUrl,
                                 ),
                             ),
                         )

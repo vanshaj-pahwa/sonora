@@ -185,8 +185,9 @@ callback returned an empty list, the queue was never replaced, and `play()` resu
 song. It now falls through DB, then the in-memory search list, then the network.
 
 **Notification channel ids strand.** Changing `NOTIFICATION_CHANNEL_ID` leaves the old channel in
-system settings until it is explicitly deleted. `SonoraApplication` deletes
-`LEGACY_NOTIFICATION_CHANNEL_ID` at startup for exactly this reason.
+system settings until it is explicitly deleted. The id has never changed under this
+applicationId, so nothing is deleted at startup. If it ever does change, delete the old id, never
+the live one: Android throws while the playback notification is up, and the app crashes on launch.
 
 **Liquid glass must be a sibling of its backdrop source.** Glass nested inside the element carrying
 `layerBackdrop` is a render feedback loop that crashes the RuntimeShader. Home and Library each

@@ -1,0 +1,542 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.alexzhirkevich",
+    "module": "compottie-resources",
+    "version": "2.2.2-compose-1.12-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.14.3"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-core",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.3.20"
+          }
+        },
+        {
+          "group": "io.github.alexzhirkevich",
+          "module": "compottie-dot",
+          "version": {
+            "requires": "2.2.2-compose-1.12-SNAPSHOT"
+          }
+        },
+        {
+          "group": "org.jetbrains.compose.ui",
+          "module": "ui",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          }
+        },
+        {
+          "group": "org.jetbrains.compose.components",
+          "module": "components-resources",
+          "version": {
+            "requires": "1.12.0-alpha01"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.10.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "compottie-resources-metadata-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "url": "compottie-resources-2.2.2-compose-1.12-SNAPSHOT.jar",
+          "size": 8029,
+          "sha512": "5b9b19be20df5dc7a32a36963cd130c8a7a227bc5705a0dd3bbf86470eebdf8e31164c377ac977bf57136a466da6528fdd7e884c4a68cce95d5365c69ba0cb9e",
+          "sha256": "52ceb15ce44ce53c7518b81b147f1fd3a3a05f12755f196d20d44534392fa1cf",
+          "sha1": "d542b04a0b236fbe3e5fcea015dd1bf9d523dd7d",
+          "md5": "448fa9446cc2f4857b280e4fd96115e5"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "compottie-resources-kotlin-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "url": "compottie-resources-2.2.2-compose-1.12-SNAPSHOT-sources.jar",
+          "size": 7075,
+          "sha512": "095be05b073975611ea8801b61598d396e22e5da687ac29caae0c31d391ff945299c19c10bd2f1a3fccd5ef0a8b528417548f661fde1467555f11f885ddaaf44",
+          "sha256": "e110f1e2009ad9de4342fc154f65dba5fa634ea981f0bbcc9e59329fc1029fc2",
+          "sha1": "db44410d5fa5c6812cc9f07ad144bcee6b457a95",
+          "md5": "6ceea862cd37dfd533f381a63c8570aa"
+        }
+      ]
+    },
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-android/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-android",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-android/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-android",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-android/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-android-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-android",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "desktopApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-desktop/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-desktop-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-desktop",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "desktopRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-desktop/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-desktop-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-desktop",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "desktopSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-desktop/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-desktop-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-desktop",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosArm64ApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosArm64ResourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.libraryelements": "kotlin-multiplatformresources",
+        "org.gradle.usage": "kotlin-multiplatformresources",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosArm64MetadataElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64ApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iossimulatorarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iossimulatorarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iossimulatorarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iossimulatorarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iossimulatorarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iossimulatorarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64ResourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.libraryelements": "kotlin-multiplatformresources",
+        "org.gradle.usage": "kotlin-multiplatformresources",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iossimulatorarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iossimulatorarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iossimulatorarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "iosSimulatorArm64MetadataElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "ios_simulator_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-iossimulatorarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-iossimulatorarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-iossimulatorarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "jsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "jsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "jsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "jsResourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.libraryelements": "kotlin-multiplatformresourcesjs",
+        "org.gradle.usage": "kotlin-multiplatformresourcesjs",
+        "org.jetbrains.kotlin.js.compiler": "ir",
+        "org.jetbrains.kotlin.platform.type": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "macosArm64ApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-macosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-macosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-macosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "macosArm64SourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-macosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-macosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-macosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "macosArm64ResourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.libraryelements": "kotlin-multiplatformresources",
+        "org.gradle.usage": "kotlin-multiplatformresources",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-macosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-macosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-macosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "macosArm64MetadataElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.native.target": "macos_arm64",
+        "org.jetbrains.kotlin.platform.type": "native"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-macosarm64/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-macosarm64-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-macosarm64",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "wasmJsApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-api",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-wasm-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-wasm-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-wasm-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "wasmJsRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-wasm-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-wasm-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-wasm-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "wasmJsSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-wasm-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-wasm-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-wasm-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    },
+    {
+      "name": "wasmJsResourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.libraryelements": "kotlin-multiplatformresourcesjs",
+        "org.gradle.usage": "kotlin-multiplatformresourcesjs",
+        "org.jetbrains.kotlin.platform.type": "wasm",
+        "org.jetbrains.kotlin.wasm.target": "js"
+      },
+      "available-at": {
+        "url": "../../compottie-resources-wasm-js/2.2.2-compose-1.12-SNAPSHOT/compottie-resources-wasm-js-2.2.2-compose-1.12-SNAPSHOT.module",
+        "group": "io.github.alexzhirkevich",
+        "module": "compottie-resources-wasm-js",
+        "version": "2.2.2-compose-1.12-SNAPSHOT"
+      }
+    }
+  ]
+}

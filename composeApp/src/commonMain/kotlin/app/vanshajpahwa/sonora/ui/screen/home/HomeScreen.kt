@@ -120,12 +120,16 @@ import app.vanshajpahwa.sonora.getPlatform
 import app.vanshajpahwa.sonora.ui.component.HomeGutter
 import app.vanshajpahwa.sonora.ui.component.HomeArtistBubble
 import app.vanshajpahwa.sonora.ui.component.HomeFolderTile
-import app.vanshajpahwa.sonora.ui.component.HomePreviewTile
+import app.vanshajpahwa.sonora.ui.component.HomeCollageCard
 import app.vanshajpahwa.sonora.ui.component.HomeResumeCard
 import app.vanshajpahwa.sonora.ui.component.HomeSectionHeader
 import app.vanshajpahwa.sonora.ui.component.HomeShortcutTile
 import app.vanshajpahwa.sonora.ui.component.HomeTrackCard
 import app.vanshajpahwa.sonora.ui.component.HomeTripletRow
+import app.vanshajpahwa.sonora.ui.component.SpeedDialDiceTile
+import app.vanshajpahwa.sonora.ui.component.SpeedDialGrid
+import app.vanshajpahwa.sonora.ui.component.SpeedDialHeader
+import app.vanshajpahwa.sonora.ui.component.SpeedDialTile
 import app.vanshajpahwa.sonora.ui.component.Chip
 import app.vanshajpahwa.sonora.ui.component.DropdownButton
 import app.vanshajpahwa.sonora.ui.component.EndOfPage
@@ -214,7 +218,8 @@ import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
 import app.vanshajpahwa.sonora.resources.discover
 import app.vanshajpahwa.sonora.resources.see_all
-import app.vanshajpahwa.sonora.resources.your_rotation
+import app.vanshajpahwa.sonora.resources.speed_dial
+import app.vanshajpahwa.sonora.resources.shuffle
 import app.vanshajpahwa.sonora.resources.let_s_pick_a_playlist_for_you
 import app.vanshajpahwa.sonora.resources.let_s_start_with_a_radio
 import app.vanshajpahwa.sonora.resources.log_in_warning
@@ -323,11 +328,10 @@ fun HomeScreen(
     val visibleShelf by viewModel.visibleShelf.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
 
-    // Three at random from the played pool, chosen in the ViewModel. Deliberately not remembered
-    // here: play time ticks while a song plays, so a remember keyed on the list would reshuffle the
-    // row under the user mid-listen.
-    val rotation by viewModel.playItAgain.collectAsStateWithLifecycle()
-    val hasLocalContent = resumeSong != null || rotation.isNotEmpty() || downloaded.isNotEmpty()
+    // Ordered in the ViewModel, not remembered here: play time ticks while a song plays, so a
+    // remember keyed on the list would reorder the grid under the user mid-listen.
+    val speedDial by viewModel.speedDial.collectAsStateWithLifecycle()
+    val hasLocalContent = resumeSong != null || speedDial.isNotEmpty() || downloaded.isNotEmpty()
 
 
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -481,7 +485,7 @@ fun HomeScreen(
             // Paint what is already on the device straight away.
             //
             // The whole screen used to shimmer until the remote feed came back, even though the
-            // resume card, the rotation and the downloads were all in hand from the first frame and
+            // resume card, Speed dial and the downloads were all in hand from the first frame and
             // needed no network at all. On a slow connection that was seconds of skeleton covering
             // content that was ready to draw. The full screen shimmer now only wins when there is
             // genuinely nothing local to show, so the page paints immediately and the YouTube
@@ -599,11 +603,12 @@ fun HomeScreen(
                                             }
                                         }
                                     }
-                                    if (rotation.isNotEmpty()) {
-                                        HomeSectionHeader(
-                                            title = stringResource(Res.string.your_rotation),
-                                            actionLabel = stringResource(Res.string.see_all),
-                                            onAction = {
+                                    if (speedDial.isNotEmpty()) {
+                                        SpeedDialHeader(
+                                            title = stringResource(Res.string.speed_dial),
+                                            accountName = accountInfo?.first,
+                                            accountThumbnail = accountInfo?.second,
+                                            onOpen = {
                                                 navController.navigate(
                                                     LibraryDynamicPlaylistDestination(
                                                         type = LibraryDynamicPlaylistType.MostPlayed.toStringParams(),
@@ -612,24 +617,25 @@ fun HomeScreen(
                                             },
                                         )
                                         Spacer(Modifier.height(12.dp))
-                                        // Chunked rather than one long row: the row is a three
-                                        // across grid, so more songs means more rows and every card
-                                        // keeps the size it has in every other section.
-                                        rotation.chunked(3).forEach { rowItems ->
-                                        HomeTripletRow(items = rowItems) { song ->
-                                            HomeTrackCard(
+                                        SpeedDialGrid(
+                                            items = speedDial,
+                                            dice = {
+                                                SpeedDialDiceTile(
+                                                    label = stringResource(Res.string.shuffle),
+                                                    onClick = { viewModel.shuffleSpeedDial() },
+                                                )
+                                            },
+                                        ) { song ->
+                                            SpeedDialTile(
                                                 title = song.title,
-                                                subtitle = song.artistName?.joinToString().orEmpty(),
                                                 thumbnail = song.thumbnails,
                                                 isPlaying = song.videoId == nowPlayingVideoId,
-                                                onPlay = {
-                                                    viewModel.playLocal(song.videoId, HomeLocalSection.MostPlayed)
+                                                onClick = {
+                                                    viewModel.playLocal(song.videoId, HomeLocalSection.SpeedDial)
                                                 },
                                             )
                                         }
-                                            Spacer(Modifier.height(12.dp))
-                                        }
-                                        Spacer(Modifier.height(14.dp))
+                                        Spacer(Modifier.height(26.dp))
                                     }
                                     if (topArtists.isNotEmpty()) {
                                         HomeSectionHeader(title = stringResource(Res.string.your_top_artists))
@@ -660,55 +666,46 @@ fun HomeScreen(
                                         }
                                         Spacer(Modifier.height(26.dp))
                                     }
-                                    // Two wide cards where three squares were. Favourites moved to
-                                    // the header, and these two now preview their top track, which a
-                                    // third-of-a-row square could never fit legibly.
-                                    // An empty tile is an empty promise. Downloaded reading zero
-                                    // took half the row to say there was nothing there, so a tile
-                                    // now appears only when it has something, the survivor takes the
-                                    // full width, and with neither the row does not draw at all.
+                                    // Local first: these open on the device with no network, so they sit in
+                                    // the local block above anything from YouTube. A card appears only when
+                                    // its list has something, and a lone card turns wide to fill the row.
                                     if (downloaded.isNotEmpty() || recent.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                        val topDownload = downloaded.firstOrNull()
-                                        val topRecent = recent.firstOrNull()
-                                        if (downloaded.isNotEmpty()) {
-                                        HomePreviewTile(
-                                            label = stringResource(Res.string.downloaded),
-                                            count = downloaded.size,
-                                            icon = SonoraIcons.DownloadForOffline,
-                                            tint = MaterialTheme.colorScheme.tertiary,
-                                            previewTitle = topDownload?.title,
-                                            previewSubtitle = topDownload?.artistName?.firstOrNull(),
-                                            previewThumbnail = topDownload?.thumbnails,
-                                            backdrop = glassBackdrop,
-                                            modifier = Modifier.weight(1f),
-                                            onClick = {
-                                                navController.navigate(
-                                                    LibraryDynamicPlaylistDestination(
-                                                        type = LibraryDynamicPlaylistType.Downloaded.toStringParams(),
-                                                    ),
+                                        val alone = downloaded.isEmpty() || recent.isEmpty()
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = HomeGutter),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            if (downloaded.isNotEmpty()) {
+                                                HomeCollageCard(
+                                                    label = stringResource(Res.string.downloaded),
+                                                    count = downloaded.size,
+                                                    icon = SonoraIcons.DownloadForOffline,
+                                                    thumbnails = downloaded.map { it.thumbnails },
+                                                    wide = alone,
+                                                    glass = useGlass,
+                                                    modifier = Modifier.weight(1f),
+                                                    onClick = {
+                                                        navController.navigate(
+                                                            LibraryDynamicPlaylistDestination(
+                                                                type = LibraryDynamicPlaylistType.Downloaded.toStringParams(),
+                                                            ),
+                                                        )
+                                                    },
                                                 )
-                                            },
-                                        )
+                                            }
+                                            if (recent.isNotEmpty()) {
+                                                HomeCollageCard(
+                                                    label = stringResource(Res.string.recently_played),
+                                                    count = recent.size,
+                                                    icon = SonoraIcons.History,
+                                                    thumbnails = recent.map { it.thumbnails },
+                                                    wide = alone,
+                                                    glass = useGlass,
+                                                    modifier = Modifier.weight(1f),
+                                                    onClick = { navController.navigate(RecentlySongsDestination) },
+                                                )
+                                            }
                                         }
-                                        if (recent.isNotEmpty()) {
-                                        HomePreviewTile(
-                                            label = stringResource(Res.string.recently_played),
-                                            count = recent.size,
-                                            icon = SonoraIcons.History,
-                                            tint = MaterialTheme.colorScheme.secondary,
-                                            previewTitle = topRecent?.title,
-                                            previewSubtitle = topRecent?.artistName?.firstOrNull(),
-                                            previewThumbnail = topRecent?.thumbnails,
-                                            backdrop = glassBackdrop,
-                                            modifier = Modifier.weight(1f),
-                                            onClick = { navController.navigate(RecentlySongsDestination) },
-                                        )
-                                        }
-                                    }
                                     }
                                 }
                             }

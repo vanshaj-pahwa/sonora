@@ -143,7 +143,7 @@
     <string name="seek_bar_style">Seek bar style</string>
     <string name="seek_bar_waves">Waves</string>
     <string name="seek_bar_line">Line</string>
-    <string name="your_rotation">Play it again</string>
+    <string name="speed_dial">Speed dial</string>
     <string name="see_all">See all</string>
     <string name="more_like">More like %1$s</string>
     <string name="recently_played">Recently played</string>
@@ -213,6 +213,9 @@
     <string name="save_last_played">Save last played</string>
     <string name="save_last_played_track_and_queue">Save last played track and queue</string>
     <string name="update_available">New update available</string>
+    <string name="update_downloading">Downloading update</string>
+    <string name="update_allow_installs">Allow installs from Sonora to continue</string>
+    <string name="update_download_failed">Download failed</string>
     <string name="update_message">Version %1$s available\nRelease: %2$s\n</string>
     <string name="check_for_update">Check for update</string>
     <string name="last_checked_at">Last checked at %1$s</string>
@@ -272,6 +275,9 @@
     <string name="sync">Sync to YouTube Music</string>
     <string name="synced">Synced with YouTube Music</string>
     <string name="song">Song</string>
+    <string name="artist">Artist</string>
+    <string name="video">Video</string>
+    <string name="play">Play</string>
     <string name="radio">Radio</string>
     <string name="auto_created_by_youtube_music">Auto created by YouTube Music</string>
     <string name="start_radio">Start radio</string>
@@ -468,6 +474,7 @@
     <string name="shuffle">Shuffle</string>
     <string name="you_might_also_like">You might also like</string>
     <string name="update">Update</string>
+    <string name="song_radio_format">%1$s radio</string>
     <string name="play_all">Play all</string>
     <string name="switch_to_video">Switch to video</string>
     <string name="switch_to_audio">Switch to audio</string>
@@ -623,6 +630,10 @@ Read this to learn how to log in on desktop:
     <string name="scale">Scale</string>
     <string name="home_offline_title">Couldn't load home</string>
     <string name="offline_banner">You're offline</string>
+    <string name="back_online">Back online</string>
+    <string name="voice_search_listening">Listening</string>
+    <string name="voice_search_failed">Didn't catch that</string>
+    <string name="voice_search_retry">Tap the mic to try again</string>
     <string name="in_your_library">In your library</string>
     <string name="home_offline_subtitle">This can be a dropped connection or a hiccup at the other end. Try again, or play something you have downloaded.</string>
     <string name="listen_to_downloaded">Listen to downloaded music</string>

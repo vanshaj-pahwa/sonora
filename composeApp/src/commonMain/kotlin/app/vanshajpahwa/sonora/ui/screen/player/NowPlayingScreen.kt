@@ -161,8 +161,10 @@ import app.vanshajpahwa.sonora.ui.component.ExplicitBadge
 import app.vanshajpahwa.sonora.ui.component.FullscreenLyricsSheet
 import app.vanshajpahwa.sonora.ui.component.HeartCheckBox
 import app.vanshajpahwa.sonora.ui.component.OutputDeviceButton
+import app.vanshajpahwa.sonora.resources.song_radio_format
 import app.vanshajpahwa.sonora.resources.switch_to_audio
 import app.vanshajpahwa.sonora.resources.switch_to_video
+import app.vanshajpahwa.domain.mediaservice.handler.PlaylistType
 import app.vanshajpahwa.sonora.ui.icon.Movie
 import app.vanshajpahwa.sonora.ui.icon.MusicNote
 import app.vanshajpahwa.sonora.ui.component.InfoPlayerBottomSheet
@@ -466,28 +468,31 @@ fun NowPlayingScreenContent(
         mutableStateOf(true)
     }
 
-    var showSheet by rememberSaveable {
+    // Sheets over the queue are not saved. A saved flag outlives a process kill, and unused saved
+    // values linger until a matching composable consumes them, so Up Next would reopen over a
+    // queue that no longer exists.
+    var showSheet by remember {
         mutableStateOf(false)
     }
 
-    var showFullscreenLyrics by rememberSaveable {
+    var showFullscreenLyrics by remember {
         mutableStateOf(false)
     }
 
-    var showQueueBottomSheet by rememberSaveable {
+    var showQueueBottomSheet by remember {
         mutableStateOf(false)
     }
 
-    var showInfoBottomSheet by rememberSaveable {
+    var showInfoBottomSheet by remember {
         mutableStateOf(false)
     }
 
-    var showVoteDialog by rememberSaveable {
+    var showVoteDialog by remember {
         mutableStateOf(false)
     }
 
     // NEW: Add to Playlist state
-    var showAddToPlaylistDirectly by rememberSaveable {
+    var showAddToPlaylistDirectly by remember {
         mutableStateOf(false)
     }
 
@@ -1560,7 +1565,20 @@ fun NowPlayingScreenContent(
                                 color = Color.White,
                             )
                             Text(
-                                text = screenDataState.playlistName,
+                                // Decorated here rather than at every entry point that can start a
+                                // radio, so one added later is covered too, and the stored name stays
+                                // plain for the queue sheet and the notification.
+                                text =
+                                    if (screenDataState.playlistType == PlaylistType.RADIO &&
+                                        screenDataState.playlistName.isNotBlank()
+                                    ) {
+                                        stringResource(
+                                            Res.string.song_radio_format,
+                                            screenDataState.playlistName,
+                                        )
+                                    } else {
+                                        screenDataState.playlistName
+                                    },
                                 style = typo().labelMedium,
                                 color = Color.White,
                                 textAlign = TextAlign.Center,

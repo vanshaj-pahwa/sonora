@@ -1,5 +1,8 @@
 package app.vanshajpahwa.sonora.viewModel
 
+import org.jetbrains.compose.resources.getString
+import app.vanshajpahwa.sonora.resources.view_count
+import app.vanshajpahwa.domain.repository.PlaylistRepository
 import androidx.lifecycle.viewModelScope
 import app.vanshajpahwa.common.Config
 import app.vanshajpahwa.domain.data.entities.ArtistEntity
@@ -39,6 +42,7 @@ class ArtistViewModel(
     private val artistRepository: ArtistRepository,
     private val songRepository: SongRepository,
     private val lyricsCanvasRepository: LyricsCanvasRepository,
+    private val playlistRepository: PlaylistRepository,
 ) : BaseViewModel() {
     // It is dynamic and can be changed by the user, so separate it from the ArtistScreenData
     private var _canvasUrl: MutableStateFlow<Pair<String, SongEntity>?> = MutableStateFlow(null)
@@ -53,6 +57,16 @@ class ArtistViewModel(
 
     private val _artistScreenState: MutableStateFlow<ArtistScreenState> = MutableStateFlow(Loading)
     val artistScreenState: StateFlow<ArtistScreenState> = _artistScreenState
+
+    /**
+     * The artist's top songs for the scrolling Popular grid.
+     *
+     * The artist page itself carries only five. The full list sits behind the shelf's See all as a
+     * playlist, so it is fetched once the page lands. Until then, or if that fails, the five stand
+     * in, so the section never waits on the second request.
+     */
+    private val _topSongs: MutableStateFlow<List<Track>> = MutableStateFlow(emptyList())
+    val topSongs: StateFlow<List<Track>> = _topSongs
 
     fun browseArtist(channelId: String) {
         _artistScreenState.value = Loading
@@ -75,8 +89,10 @@ class ArtistViewModel(
                                 ),
                             )
                         }
-                        _artistScreenState.value =
-                            Success(data.toArtistScreenData())
+                        val screenData = data.toArtistScreenData()
+                        _artistScreenState.value = Success(screenData)
+                        _topSongs.value = screenData.popularSongs
+                        screenData.listSongParam?.let { loadTopSongs(it) }
                         // Canvas comes ONLY from the single most-popular song: take the first
                         // popular result and use its canvas if it has one. If it doesn't,
                         // leave canvas null (already reset above) — no fallback to other songs.
@@ -98,6 +114,36 @@ class ArtistViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private fun loadTopSongs(playlistId: String) {
+        viewModelScope.launch {
+            playlistRepository.getPlaylistData(playlistId, getString(Res.string.view_count)).collect { res ->
+                val tracks = res.data?.first?.tracks
+                if (res is Resource.Success && !tracks.isNullOrEmpty()) {
+                    _topSongs.value = tracks.take(TOP_SONGS_COUNT)
+                }
+            }
+        }
+    }
+
+    /** A song from the Popular grid, with the rest of the top songs queued around it. */
+    fun playTopSong(index: Int) {
+        val songs = _topSongs.value
+        val track = songs.getOrNull(index) ?: return
+        viewModelScope.launch {
+            setQueueData(
+                QueueData.Data(
+                    listTracks = ArrayList(songs),
+                    firstPlayedTrack = track,
+                    playlistId = null,
+                    playlistName = "\"${(artistScreenState.value as? Success)?.data?.title.orEmpty()}\" ${getString(Res.string.popular)}",
+                    playlistType = PlaylistType.RADIO,
+                    continuation = null,
+                ),
+            )
+            loadMediaItem(track, Config.PLAYLIST_CLICK, index)
         }
     }
 
@@ -195,7 +241,7 @@ class ArtistViewModel(
      * on the one button the page exists for.
      */
     fun onPlayPopularClick() {
-        val songs = artistScreenState.value.data.popularSongs
+        val songs = _topSongs.value.ifEmpty { artistScreenState.value.data.popularSongs }
         val first = songs.firstOrNull() ?: return
         viewModelScope.launch {
             setQueueData(
@@ -277,3 +323,6 @@ sealed class ArtistScreenState(
         message: String,
     ) : ArtistScreenState(message = message)
 }
+
+/** Five columns of four in the Popular grid. */
+private const val TOP_SONGS_COUNT = 20
