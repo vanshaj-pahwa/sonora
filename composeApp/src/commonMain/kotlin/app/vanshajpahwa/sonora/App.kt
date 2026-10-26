@@ -173,10 +173,7 @@ fun App(
         }
     }
 
-    // Now playing screen
-    var isShowNowPlaylistScreen by rememberSaveable {
-        mutableStateOf(false)
-    }
+    val isShowNowPlaylistScreen by viewModel.isNowPlayingOpen.collectAsStateWithLifecycle()
 
     // Fullscreen
     var isInFullscreen by rememberSaveable {
@@ -332,7 +329,7 @@ fun App(
     LaunchedEffect(navBackStackEntry) {
         Logger.d("MainActivity", "Current destination: ${navBackStackEntry?.destination?.route}")
         if (navBackStackEntry?.destination?.route?.contains("FullscreenDestination") == true) {
-            isShowNowPlaylistScreen = false
+            viewModel.setNowPlayingOpen(false)
         }
         isInFullscreen = navBackStackEntry?.destination?.hierarchy?.any {
             it.hasRoute(FullscreenDestination::class)
@@ -372,7 +369,7 @@ fun App(
                                     navController = navController,
                                     backdrop = backdrop,
                                     viewModel = viewModel,
-                                    onOpenNowPlaying = { isShowNowPlaylistScreen = true },
+                                    onOpenNowPlaying = { viewModel.setNowPlayingOpen(true) },
                                     isScrolledToTop = isScrolledToTop,
                                 ) { klass ->
                                     viewModel.reloadDestination(klass)
@@ -396,7 +393,7 @@ fun App(
                                                         .padding(bottom = 4.dp),
                                                     backdrop = backdrop,
                                                     onClick = {
-                                                        isShowNowPlaylistScreen = true
+                                                        viewModel.setNowPlayingOpen(true)
                                                     },
                                                     onClose = {
                                                         viewModel.stopPlayer()
@@ -527,7 +524,7 @@ fun App(
                                         isNavBarVisible = true
                                     },
                                     showNowPlayingSheet = {
-                                        isShowNowPlaylistScreen = true
+                                        viewModel.setNowPlayingOpen(true)
                                     },
                                     onScrolling = {
                                         isScrolledToTop = it
@@ -577,7 +574,7 @@ fun App(
                                     },
                                     backdrop = backdrop,
                                     onClick = {
-                                        isShowNowPlaylistScreen = true
+                                        viewModel.setNowPlayingOpen(true)
                                     },
                                     onClose = {
                                         viewModel.stopPlayer()
@@ -617,7 +614,7 @@ fun App(
                                                 isExpanded = true,
                                                 dismissIcon = SonoraIcons.ArrowForwardIos,
                                             ) {
-                                                isShowNowPlaylistScreen = false
+                                                viewModel.setNowPlayingOpen(false)
                                             }
                                         }
                                     }
@@ -632,7 +629,7 @@ fun App(
                         NowPlayingScreen(
                             navController = navController,
                         ) {
-                            isShowNowPlaylistScreen = false
+                            viewModel.setNowPlayingOpen(false)
                         }
                     }
                 }

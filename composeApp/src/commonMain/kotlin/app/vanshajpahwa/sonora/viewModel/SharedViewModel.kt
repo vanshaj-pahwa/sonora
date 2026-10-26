@@ -134,6 +134,16 @@ class SharedViewModel(
 
     var isServiceRunning: Boolean = false
 
+    // Kept here rather than in rememberSaveable. Saved instance state survives process death and
+    // the player does not, so a saved flag reopened Now Playing over an empty queue on relaunch.
+    // This object lives exactly as long as the player state it presents.
+    private val _isNowPlayingOpen = MutableStateFlow(false)
+    val isNowPlayingOpen: StateFlow<Boolean> = _isNowPlayingOpen
+
+    fun setNowPlayingOpen(open: Boolean) {
+        _isNowPlayingOpen.value = open
+    }
+
     private var _sleepTimerState = MutableStateFlow(SleepTimerState(false, 0))
     val sleepTimerState: StateFlow<SleepTimerState> = _sleepTimerState
 

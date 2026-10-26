@@ -468,28 +468,31 @@ fun NowPlayingScreenContent(
         mutableStateOf(true)
     }
 
-    var showSheet by rememberSaveable {
+    // Sheets over the queue are not saved. A saved flag outlives a process kill, and unused saved
+    // values linger until a matching composable consumes them, so Up Next would reopen over a
+    // queue that no longer exists.
+    var showSheet by remember {
         mutableStateOf(false)
     }
 
-    var showFullscreenLyrics by rememberSaveable {
+    var showFullscreenLyrics by remember {
         mutableStateOf(false)
     }
 
-    var showQueueBottomSheet by rememberSaveable {
+    var showQueueBottomSheet by remember {
         mutableStateOf(false)
     }
 
-    var showInfoBottomSheet by rememberSaveable {
+    var showInfoBottomSheet by remember {
         mutableStateOf(false)
     }
 
-    var showVoteDialog by rememberSaveable {
+    var showVoteDialog by remember {
         mutableStateOf(false)
     }
 
     // NEW: Add to Playlist state
-    var showAddToPlaylistDirectly by rememberSaveable {
+    var showAddToPlaylistDirectly by remember {
         mutableStateOf(false)
     }
 
