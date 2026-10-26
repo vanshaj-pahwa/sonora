@@ -143,7 +143,7 @@
     <string name="seek_bar_style">Seek bar style</string>
     <string name="seek_bar_waves">Waves</string>
     <string name="seek_bar_line">Line</string>
-    <string name="your_rotation">Play it again</string>
+    <string name="speed_dial">Speed dial</string>
     <string name="see_all">See all</string>
     <string name="more_like">More like %1$s</string>
     <string name="recently_played">Recently played</string>

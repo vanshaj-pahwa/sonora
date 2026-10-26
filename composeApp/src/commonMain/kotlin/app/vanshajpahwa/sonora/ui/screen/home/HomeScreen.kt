@@ -126,6 +126,10 @@ import app.vanshajpahwa.sonora.ui.component.HomeSectionHeader
 import app.vanshajpahwa.sonora.ui.component.HomeShortcutTile
 import app.vanshajpahwa.sonora.ui.component.HomeTrackCard
 import app.vanshajpahwa.sonora.ui.component.HomeTripletRow
+import app.vanshajpahwa.sonora.ui.component.SpeedDialDiceTile
+import app.vanshajpahwa.sonora.ui.component.SpeedDialGrid
+import app.vanshajpahwa.sonora.ui.component.SpeedDialHeader
+import app.vanshajpahwa.sonora.ui.component.SpeedDialTile
 import app.vanshajpahwa.sonora.ui.component.Chip
 import app.vanshajpahwa.sonora.ui.component.DropdownButton
 import app.vanshajpahwa.sonora.ui.component.EndOfPage
@@ -214,7 +218,8 @@ import app.vanshajpahwa.sonora.resources.downloaded
 import app.vanshajpahwa.sonora.resources.favorite
 import app.vanshajpahwa.sonora.resources.discover
 import app.vanshajpahwa.sonora.resources.see_all
-import app.vanshajpahwa.sonora.resources.your_rotation
+import app.vanshajpahwa.sonora.resources.speed_dial
+import app.vanshajpahwa.sonora.resources.shuffle
 import app.vanshajpahwa.sonora.resources.let_s_pick_a_playlist_for_you
 import app.vanshajpahwa.sonora.resources.let_s_start_with_a_radio
 import app.vanshajpahwa.sonora.resources.log_in_warning
@@ -323,11 +328,10 @@ fun HomeScreen(
     val visibleShelf by viewModel.visibleShelf.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
 
-    // Three at random from the played pool, chosen in the ViewModel. Deliberately not remembered
-    // here: play time ticks while a song plays, so a remember keyed on the list would reshuffle the
-    // row under the user mid-listen.
-    val rotation by viewModel.playItAgain.collectAsStateWithLifecycle()
-    val hasLocalContent = resumeSong != null || rotation.isNotEmpty() || downloaded.isNotEmpty()
+    // Ordered in the ViewModel, not remembered here: play time ticks while a song plays, so a
+    // remember keyed on the list would reorder the grid under the user mid-listen.
+    val speedDial by viewModel.speedDial.collectAsStateWithLifecycle()
+    val hasLocalContent = resumeSong != null || speedDial.isNotEmpty() || downloaded.isNotEmpty()
 
 
     val backgroundColor = MaterialTheme.colorScheme.background
@@ -481,7 +485,7 @@ fun HomeScreen(
             // Paint what is already on the device straight away.
             //
             // The whole screen used to shimmer until the remote feed came back, even though the
-            // resume card, the rotation and the downloads were all in hand from the first frame and
+            // resume card, Speed dial and the downloads were all in hand from the first frame and
             // needed no network at all. On a slow connection that was seconds of skeleton covering
             // content that was ready to draw. The full screen shimmer now only wins when there is
             // genuinely nothing local to show, so the page paints immediately and the YouTube
@@ -599,11 +603,12 @@ fun HomeScreen(
                                             }
                                         }
                                     }
-                                    if (rotation.isNotEmpty()) {
-                                        HomeSectionHeader(
-                                            title = stringResource(Res.string.your_rotation),
-                                            actionLabel = stringResource(Res.string.see_all),
-                                            onAction = {
+                                    if (speedDial.isNotEmpty()) {
+                                        SpeedDialHeader(
+                                            title = stringResource(Res.string.speed_dial),
+                                            accountName = accountInfo?.first,
+                                            accountThumbnail = accountInfo?.second,
+                                            onOpen = {
                                                 navController.navigate(
                                                     LibraryDynamicPlaylistDestination(
                                                         type = LibraryDynamicPlaylistType.MostPlayed.toStringParams(),
@@ -612,24 +617,25 @@ fun HomeScreen(
                                             },
                                         )
                                         Spacer(Modifier.height(12.dp))
-                                        // Chunked rather than one long row: the row is a three
-                                        // across grid, so more songs means more rows and every card
-                                        // keeps the size it has in every other section.
-                                        rotation.chunked(3).forEach { rowItems ->
-                                        HomeTripletRow(items = rowItems) { song ->
-                                            HomeTrackCard(
+                                        SpeedDialGrid(
+                                            items = speedDial,
+                                            dice = {
+                                                SpeedDialDiceTile(
+                                                    label = stringResource(Res.string.shuffle),
+                                                    onClick = { viewModel.shuffleSpeedDial() },
+                                                )
+                                            },
+                                        ) { song ->
+                                            SpeedDialTile(
                                                 title = song.title,
-                                                subtitle = song.artistName?.joinToString().orEmpty(),
                                                 thumbnail = song.thumbnails,
                                                 isPlaying = song.videoId == nowPlayingVideoId,
-                                                onPlay = {
-                                                    viewModel.playLocal(song.videoId, HomeLocalSection.MostPlayed)
+                                                onClick = {
+                                                    viewModel.playLocal(song.videoId, HomeLocalSection.SpeedDial)
                                                 },
                                             )
                                         }
-                                            Spacer(Modifier.height(12.dp))
-                                        }
-                                        Spacer(Modifier.height(14.dp))
+                                        Spacer(Modifier.height(26.dp))
                                     }
                                     if (topArtists.isNotEmpty()) {
                                         HomeSectionHeader(title = stringResource(Res.string.your_top_artists))

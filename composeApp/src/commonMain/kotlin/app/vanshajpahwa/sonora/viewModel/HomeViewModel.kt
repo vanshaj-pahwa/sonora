@@ -66,13 +66,8 @@ private const val TAG = "HomeViewModel"
 private const val SHELF_ROTATION_MS = 10_000L
 
 @OptIn(FlowPreview::class)
-/**
- * How many songs the rotation shelf offers.
- *
- * Six rather than three: three is one row, and a single row of a library someone has actually built
- * reads as the app having little to give back. The row renders three across, so this fills two.
- */
-private const val PLAY_IT_AGAIN_COUNT = 6
+/** Three pages of the 3x3 Speed dial grid. */
+private const val SPEED_DIAL_COUNT = 27
 
 class HomeViewModel(
     private val dataStoreManager: DataStoreManager,
@@ -100,42 +95,28 @@ class HomeViewModel(
     val mostPlayed: StateFlow<List<SongEntity>> = _mostPlayed
 
     /**
-     * The three tracks behind "Play it again", picked at random rather than by play time.
+     * The songs behind Speed dial, most played and recently played taken in turn.
      *
-     * Held here rather than remembered in the composable, because the pool changes constantly: play
-     * time ticks up while a song is playing, so a remember keyed on the list would reshuffle the
-     * row under the user mid-listen. Deciding once per ViewModel means the pick is stable for the
-     * whole visit, including navigating away and back, and only re-rolls on a fresh app start.
-     *
-     * The chosen ids are kept and only re-rolled when one of them drops out of the pool entirely,
-     * so ordinary play-time updates re-resolve the same three songs instead of replacing them.
+     * The order is fixed once chosen and only re-picked when a song drops out of the pool or the pool
+     * grows into an unfilled slot. Play time ticks while a song plays, so ordering live by it would
+     * shuffle tiles under the user's finger mid-listen.
      */
-    private val _playItAgain: MutableStateFlow<List<SongEntity>> = MutableStateFlow(emptyList())
-    val playItAgain: StateFlow<List<SongEntity>> = _playItAgain
-    private var playItAgainIds: List<String> = emptyList()
+    private val _speedDial: MutableStateFlow<List<SongEntity>> = MutableStateFlow(emptyList())
+    val speedDial: StateFlow<List<SongEntity>> = _speedDial
+    private var speedDialIds: List<String> = emptyList()
 
-    private fun refreshPlayItAgain(pool: List<SongEntity>) {
-        // distinct first: a song can be both most played and liked, and it must not fill two of the
-        // three slots.
+    private fun refreshSpeedDial(pool: List<SongEntity>) {
         val unique = pool.distinctBy { it.videoId }
-        if (unique.isEmpty()) {
-            playItAgainIds = emptyList()
-            _playItAgain.value = emptyList()
-            return
-        }
-        // The count has to be part of the validity test, not just whether the ids still resolve.
-        //
-        // Both source flows start empty, so combine fires once with an empty pool, then again the
-        // moment the first song arrives. That early emission picked a single id, and from then on
-        // every later emission saw "my one id is still in the pool" and treated the pick as good,
-        // so the row stayed stuck at one song no matter how many turned up afterwards.
-        val wanted = minOf(PLAY_IT_AGAIN_COUNT, unique.size)
+        // The count is part of the validity test, not just whether the ids still resolve. The source
+        // flows start empty and fill one by one, and a pick taken from an early, short pool would
+        // otherwise stay short for the whole visit.
+        val wanted = minOf(SPEED_DIAL_COUNT, unique.size)
         val stillValid =
-            playItAgainIds.size == wanted && playItAgainIds.all { id -> unique.any { it.videoId == id } }
+            speedDialIds.size == wanted && speedDialIds.all { id -> unique.any { it.videoId == id } }
         if (!stillValid) {
-            playItAgainIds = unique.shuffled().take(wanted).map { it.videoId }
+            speedDialIds = unique.take(wanted).map { it.videoId }
         }
-        _playItAgain.value = playItAgainIds.mapNotNull { id -> unique.firstOrNull { it.videoId == id } }
+        _speedDial.value = speedDialIds.mapNotNull { id -> unique.firstOrNull { it.videoId == id } }
     }
 
     private val _liked: MutableStateFlow<List<SongEntity>> = MutableStateFlow(emptyList())
@@ -462,11 +443,11 @@ class HomeViewModel(
         viewModelScope.launch {
             // Waits for real content before asking YouTube for anything: on a fresh install both
             // lists are empty and there is nothing to be "more like".
-            combine(_mostPlayed, _liked) { played, liked ->
-                // Most played first, topped up with liked songs so the row still fills on a fresh
-                // install where nothing has accumulated play time yet.
-                played + liked
-            }.collect { pool -> refreshPlayItAgain(pool) }
+            combine(_mostPlayed, _recent, _liked) { played, recent, liked ->
+                // Alternating keeps both the long term favourites and what was on yesterday near the
+                // top. Liked songs top it up on a fresh install where little has been played yet.
+                interleave(played, recent) + liked
+            }.collect { pool -> refreshSpeedDial(pool) }
         }
         viewModelScope.launch {
             combine(_mostPlayed, _liked, _topArtists) { played, liked, artists ->
@@ -532,7 +513,7 @@ class HomeViewModel(
     ) {
         val list =
             when (source) {
-                HomeLocalSection.MostPlayed -> mostPlayed.value
+                HomeLocalSection.SpeedDial -> speedDial.value
                 HomeLocalSection.Liked -> liked.value
                 HomeLocalSection.Downloaded -> downloaded.value
                 // The song to resume, then everything else recently played behind it. A queue of
@@ -544,12 +525,27 @@ class HomeViewModel(
                         .distinctBy { it.videoId }
             }
         val track = list.find { it.videoId == videoId } ?: return
+        playQueue(list, track, source.label)
+    }
+
+    /** The Speed dial dice: every Speed dial song, in a new random order each roll. */
+    fun shuffleSpeedDial() {
+        val list = speedDial.value.shuffled()
+        val track = list.firstOrNull() ?: return
+        playQueue(list, track, HomeLocalSection.SpeedDial.label)
+    }
+
+    private fun playQueue(
+        list: List<SongEntity>,
+        track: SongEntity,
+        label: String,
+    ) {
         setQueueData(
             QueueData.Data(
                 listTracks = list.toArrayListTrack(),
                 firstPlayedTrack = track.toTrack(),
                 playlistId = null,
-                playlistName = source.label,
+                playlistName = label,
                 playlistType = PlaylistType.RADIO,
                 continuation = null,
             ),
@@ -921,7 +917,18 @@ enum class HomeLocalSection(
     val label: String,
 ) {
     Resume("Continue"),
-    MostPlayed("Your rotation"),
+    SpeedDial("Speed dial"),
     Liked("Liked"),
     Downloaded("Offline"),
 }
+
+private fun <T> interleave(
+    first: List<T>,
+    second: List<T>,
+): List<T> =
+    buildList {
+        for (i in 0 until maxOf(first.size, second.size)) {
+            first.getOrNull(i)?.let(::add)
+            second.getOrNull(i)?.let(::add)
+        }
+    }
