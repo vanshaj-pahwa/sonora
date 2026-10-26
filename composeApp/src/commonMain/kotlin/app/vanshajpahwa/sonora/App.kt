@@ -76,7 +76,10 @@ import app.vanshajpahwa.sonora.expect.openUrl
 import app.vanshajpahwa.sonora.expect.ui.layerBackdrop
 import app.vanshajpahwa.sonora.expect.ui.rememberBackdrop
 import app.vanshajpahwa.sonora.extension.copy
-import app.vanshajpahwa.sonora.ui.component.OfflineBanner
+import app.vanshajpahwa.sonora.ui.component.ConnectionBanner
+import app.vanshajpahwa.sonora.expect.ui.ObserveNetwork
+import app.vanshajpahwa.sonora.viewModel.ConnectionStatus
+import kotlinx.coroutines.delay
 import app.vanshajpahwa.sonora.ui.component.AppBottomNavigationBar
 import app.vanshajpahwa.sonora.ui.component.AppNavigationRail
 import app.vanshajpahwa.sonora.ui.component.LiquidGlassAppBottomNavigationBar
@@ -142,7 +145,21 @@ fun App(
     viewModel: SharedViewModel = koinInject(),
     remoteFeedHealth: RemoteFeedHealth = koinInject(),
 ) {
-    val isRemoteUnreachable by remoteFeedHealth.unreachable.collectAsStateWithLifecycle()
+    val connectionStatus by remoteFeedHealth.status.collectAsStateWithLifecycle()
+    // What the bar last said, kept while it animates out. Reading connectionStatus directly would
+    // repaint a leaving "Back online" bar as offline for the length of the exit animation.
+    var shownConnectionStatus by remember { mutableStateOf(ConnectionStatus.Offline) }
+    if (connectionStatus != ConnectionStatus.Online) shownConnectionStatus = connectionStatus
+    ObserveNetwork(
+        onAvailable = { remoteFeedHealth.onNetworkAvailable() },
+        onLost = { remoteFeedHealth.onNetworkLost() },
+    )
+    LaunchedEffect(connectionStatus) {
+        if (connectionStatus == ConnectionStatus.BackOnline) {
+            delay(2_500)
+            remoteFeedHealth.backOnlineShown()
+        }
+    }
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
     val navController = rememberNavController()
 
@@ -412,12 +429,14 @@ fun App(
                             // popped in: the bar appears while the user is mid scroll and a sudden
                             // layout jump under the thumb reads as a glitch.
                             AnimatedVisibility(
-                                visible = isRemoteUnreachable,
+                                visible = connectionStatus != ConnectionStatus.Online,
                                 enter = expandVertically() + fadeIn(),
                                 exit = shrinkVertically() + fadeOut(),
                             ) {
-                                OfflineBanner(
+                                ConnectionBanner(
+                                    backOnline = shownConnectionStatus == ConnectionStatus.BackOnline,
                                     onRetry = { remoteFeedHealth.requestRetry() },
+                                    backdrop = backdrop.takeIf { isLiquidGlassEnabled == TRUE && getPlatform() == Platform.Android },
                                     modifier =
                                         Modifier
                                             .padding(horizontal = 12.dp)
