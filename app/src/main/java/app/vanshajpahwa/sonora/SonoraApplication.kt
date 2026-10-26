@@ -1,12 +1,10 @@
 package app.vanshajpahwa.sonora
 
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.app.Application
 import android.database.CursorWindow
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
-import app.vanshajpahwa.common.MEDIA_NOTIFICATION
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import cat.ereza.customactivityoncrash.config.CaocConfig
@@ -50,12 +48,6 @@ class SonoraApplication :
     override fun onCreate() {
         super.onCreate()
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        // The playback channel id changed with the rebrand. Android does not retire the old one
-        // on its own, so without this the settings screen shows a stale "Sonora Playback
-        // Notification" channel alongside the new one for as long as the app stays installed.
-        // Harmless to call when the channel was never there.
-        getSystemService(NotificationManager::class.java)
-            ?.deleteNotificationChannel(MEDIA_NOTIFICATION.LEGACY_NOTIFICATION_CHANNEL_ID)
         startKoin {
             androidLogger(level = Level.DEBUG)
             androidContext(this@SonoraApplication)
