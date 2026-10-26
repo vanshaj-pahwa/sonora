@@ -1,5 +1,6 @@
 package app.vanshajpahwa.sonora.ui.screen.other
 
+import app.vanshajpahwa.domain.manager.DataStoreManager
 import androidx.compose.animation.AnimatedContent
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.AnimatedVisibility
@@ -134,6 +135,8 @@ import app.vanshajpahwa.sonora.ui.navigation.destination.list.PodcastDestination
 import app.vanshajpahwa.sonora.ui.theme.typo
 import app.vanshajpahwa.sonora.viewModel.SearchScreenUIState
 import app.vanshajpahwa.sonora.viewModel.SearchType
+import app.vanshajpahwa.sonora.ui.component.HomeSectionHeader
+import app.vanshajpahwa.sonora.resources.see_all
 import app.vanshajpahwa.sonora.viewModel.SearchViewModel
 import app.vanshajpahwa.sonora.viewModel.SharedViewModel
 import app.vanshajpahwa.sonora.viewModel.toStringRes
@@ -259,14 +262,32 @@ fun SearchScreen(
 
     var sheetSong by remember { mutableStateOf<SongEntity?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var saveSong by remember { mutableStateOf<SongEntity?>(null) }
     var showVoiceSheet by remember { mutableStateOf(false) }
     val currentVideoId by searchViewModel.nowPlayingVideoId.collectAsStateWithLifecycle()
+    val artistSpotlight by searchViewModel.artistSpotlight.collectAsStateWithLifecycle()
+    val liquidGlassSetting by sharedViewModel.getEnableLiquidGlass().collectAsStateWithLifecycle(DataStoreManager.FALSE)
+    val useGlass = liquidGlassSetting == DataStoreManager.TRUE && getPlatform() == Platform.Android
     val chipRowState = rememberScrollState()
     val pullToRefreshState = rememberPullToRefreshState()
 
     val onMoreClick: (SongEntity) -> Unit = { song ->
         sheetSong = song
         showBottomSheet = true
+    }
+
+    val playFromSearch: (Track, String) -> Unit = { track, clickType ->
+        searchViewModel.setQueueData(
+            QueueData.Data(
+                listTracks = arrayListOf(track),
+                firstPlayedTrack = track,
+                playlistId = "RDAMVM${track.videoId}",
+                playlistName = "\"${searchText}\" ${getStringBlocking(Res.string.in_search)}",
+                playlistType = PlaylistType.RADIO,
+                continuation = null,
+            ),
+        )
+        searchViewModel.loadMediaItem(track, clickType)
     }
 
     LaunchedEffect(searchText) {
@@ -325,6 +346,16 @@ fun SearchScreen(
             },
             navController = navController,
             song = sheetSong,
+        )
+    }
+
+    // Save on the top result: the same playlist picker the song sheet offers, opened directly.
+    saveSong?.let { song ->
+        NowPlayingBottomSheet(
+            onDismiss = { saveSong = null },
+            navController = navController,
+            song = song,
+            startInAddToPlaylist = true,
         )
     }
 
@@ -809,6 +840,189 @@ fun SearchScreen(
                                             // Local matches alone are enough to show the list. Gating on the
                                             // remote results meant that with no connection the library section
                                             // was built and then never drawn.
+                                            val resultRow: @Composable (SearchResultType) -> Unit = { result ->
+                                                when (result) {
+                                                    is SongsResult -> {
+                                                        SongFullWidthItems(
+                                                            track = result.toTrack(),
+                                                            isPlaying = result.videoId == currentVideoId,
+                                                            showDuration = true,
+                                                            modifier = Modifier,
+                                                            onMoreClickListener = {
+                                                                onMoreClick(result.toTrack().toSongEntity())
+                                                            },
+                                                            onClickListener = {
+                                                                val firstTrack = result.toTrack()
+                                                                searchViewModel.setQueueData(
+                                                                    QueueData.Data(
+                                                                        listTracks = arrayListOf(firstTrack),
+                                                                        firstPlayedTrack = firstTrack,
+                                                                        playlistId = "RDAMVM${result.videoId}",
+                                                                        playlistName =
+                                                                            "\"${searchText}\" ${
+                                                                                getStringBlocking(
+                                                                                    Res.string.in_search,
+                                                                                )
+                                                                            }",
+                                                                        playlistType = PlaylistType.RADIO,
+                                                                        continuation = null,
+                                                                    ),
+                                                                )
+                                                                searchViewModel.loadMediaItem(firstTrack, Config.SONG_CLICK)
+                                                            },
+                                                            onAddToQueue = {
+                                                                sharedViewModel.addListToQueue(
+                                                                    arrayListOf(result.toTrack()),
+                                                                )
+                                                            },
+                                                        )
+                                                    }
+
+                                                    is VideosResult -> {
+                                                        SongFullWidthItems(
+                                                            track = result.toTrack(),
+                                                            isPlaying = result.videoId == currentVideoId,
+                                                            showDuration = true,
+                                                            modifier = Modifier,
+                                                            onMoreClickListener = {
+                                                                onMoreClick(result.toTrack().toSongEntity())
+                                                            },
+                                                            onClickListener = {
+                                                                val firstTrack = result.toTrack()
+                                                                searchViewModel.setQueueData(
+                                                                    QueueData.Data(
+                                                                        listTracks = arrayListOf(firstTrack),
+                                                                        firstPlayedTrack = firstTrack,
+                                                                        playlistId = "RDAMVM${result.videoId}",
+                                                                        playlistName =
+                                                                            "\"${searchText}\" ${
+                                                                                getStringBlocking(
+                                                                                    Res.string.in_search,
+                                                                                )
+                                                                            }",
+                                                                        playlistType = PlaylistType.RADIO,
+                                                                        continuation = null,
+                                                                    ),
+                                                                )
+                                                                searchViewModel.loadMediaItem(firstTrack, Config.VIDEO_CLICK)
+                                                            },
+                                                            onAddToQueue = {
+                                                                sharedViewModel.addListToQueue(
+                                                                    arrayListOf(result.toTrack()),
+                                                                )
+                                                            },
+                                                        )
+                                                    }
+
+                                                    is AlbumsResult -> {
+                                                        PlaylistFullWidthItems(
+                                                            data = result,
+                                                            onClickListener = {
+                                                                navController.navigate(
+                                                                    AlbumDestination(
+                                                                        result.browseId,
+                                                                    ),
+                                                                )
+                                                            },
+                                                        )
+                                                    }
+
+                                                    is ArtistsResult -> {
+                                                        ArtistFullWidthItems(
+                                                            data = result,
+                                                            onClickListener = {
+                                                                navController.navigate(
+                                                                    ArtistDestination(
+                                                                        result.browseId,
+                                                                    ),
+                                                                )
+                                                            },
+                                                        )
+                                                    }
+
+                                                    is PlaylistsResult -> {
+                                                        PlaylistFullWidthItems(
+                                                            data = result,
+                                                            onClickListener = {
+                                                                if (result.resultType == "Podcast") {
+                                                                    navController.navigate(
+                                                                        PodcastDestination(
+                                                                            result.browseId,
+                                                                        ),
+                                                                    )
+                                                                } else {
+                                                                    navController.navigate(
+                                                                        PlaylistDestination(
+                                                                            result.browseId,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            },
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            val topResult =
+                                                remember(searchScreenState.searchAllResult) {
+                                                    pickTopResult(
+                                                        query = searchText,
+                                                        songs = searchScreenState.searchSongsResult,
+                                                        videos = searchScreenState.searchVideosResult,
+                                                        artists = searchScreenState.searchArtistsResult,
+                                                    )
+                                                }
+                                            LaunchedEffect(topResult) {
+                                                (topResult as? ArtistsResult)?.let { searchViewModel.loadArtistSpotlight(it.browseId) }
+                                            }
+                                            // Library matches show while typing, and the card arrives above them
+                                            // with the remote results. The list keeps its place on the rows it
+                                            // was showing, which left a fresh search opened halfway down.
+                                            LaunchedEffect(searchScreenState.searchAllResult) {
+                                                resultsState.scrollToItem(0)
+                                            }
+                                            // Songs already inside the artist card, kept out of the Songs section below.
+                                            val spotlightIds =
+                                                artistSpotlight
+                                                    ?.takeIf { it.channelId == (topResult as? ArtistsResult)?.browseId }
+                                                    ?.topSongs
+                                                    ?.map { it.videoId }
+                                                    .orEmpty()
+                                                    .toSet()
+                                            // One titled section per type in place of a single mixed list. The
+                                            // featured result is left out of its section rather than shown twice.
+                                            val searchSections =
+                                                remember(searchScreenState.searchAllResult, topResult, spotlightIds) {
+                                                    listOf(
+                                                        SearchSection(SearchType.ARTISTS, searchScreenState.searchArtistsResult, 3),
+                                                        SearchSection(SearchType.SONGS, searchScreenState.searchSongsResult, 5),
+                                                        SearchSection(SearchType.VIDEOS, searchScreenState.searchVideosResult, 3),
+                                                        SearchSection(SearchType.ALBUMS, searchScreenState.searchAlbumsResult, 3),
+                                                        SearchSection(SearchType.PLAYLISTS, searchScreenState.searchPlaylistsResult, 3),
+                                                        SearchSection(
+                                                            SearchType.FEATURED_PLAYLISTS,
+                                                            searchScreenState.searchFeaturedPlaylistsResult,
+                                                            3,
+                                                        ),
+                                                        SearchSection(SearchType.PODCASTS, searchScreenState.searchPodcastsResult, 3),
+                                                    ).let { sections ->
+                                                        // Under an artist card, other artists are the least likely next tap,
+                                                        // so they wait until after that artist's music.
+                                                        if (topResult is ArtistsResult) {
+                                                            val (artists, rest) = sections.partition { it.type == SearchType.ARTISTS }
+                                                            rest.take(3) + artists + rest.drop(3)
+                                                        } else {
+                                                            sections
+                                                        }
+                                                    }.map { section ->
+                                                        section.copy(
+                                                            items =
+                                                                section.items
+                                                                    .filter { it != topResult }
+                                                                    .filterNot { it is SongsResult && it.videoId in spotlightIds }
+                                                                    .take(section.limit),
+                                                        )
+                                                    }.filter { it.items.isNotEmpty() }
+                                                }
                                             Crossfade(targetState = currentResults.isNotEmpty() || localResults.isNotEmpty()) {
                                                 if (it) {
                                                     LazyColumn(
@@ -821,6 +1035,27 @@ fun SearchScreen(
                                                             ),
                                                         state = resultsState,
                                                     ) {
+                                                        val featured = topResult
+                                                        if (searchScreenState.searchType == SearchType.ALL && featured != null) {
+                                                            item(key = "top_result") {
+                                                                SearchTopResult(
+                                                                    result = featured,
+                                                                    spotlight = artistSpotlight,
+                                                                    currentVideoId = currentVideoId,
+                                                                    onPlay = playFromSearch,
+                                                                    onSave = { saveSong = it },
+                                                                    onStartRadio = { searchViewModel.startArtistRadio(it) },
+                                                                    onShuffle = { searchViewModel.shuffleArtist(it) },
+                                                                    onPlaySpotlightSong = { spotlight, index ->
+                                                                        searchViewModel.playSpotlightSong(spotlight, index)
+                                                                    },
+                                                                    onMoreSong = { onMoreClick(it.toSongEntity()) },
+                                                                    glass = useGlass,
+                                                                    onOpenArtist = { navController.navigate(ArtistDestination(it.browseId)) },
+                                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                                                )
+                                                            }
+                                                        }
                                                         if (localResults.isNotEmpty()) {
                                                             item(key = "local_header") {
                                                                 Text(
@@ -857,127 +1092,20 @@ fun SearchScreen(
                                                                 )
                                                             }
                                                         }
-                                                        items(currentResults) { result ->
-                                                            when (result) {
-                                                                is SongsResult -> {
-                                                                    SongFullWidthItems(
-                                                                        track = result.toTrack(),
-                                                                        isPlaying = result.videoId == currentVideoId,
-                                                                        showDuration = true,
-                                                                        modifier = Modifier,
-                                                                        onMoreClickListener = {
-                                                                            onMoreClick(result.toTrack().toSongEntity())
-                                                                        },
-                                                                        onClickListener = {
-                                                                            val firstTrack = result.toTrack()
-                                                                            searchViewModel.setQueueData(
-                                                                                QueueData.Data(
-                                                                                    listTracks = arrayListOf(firstTrack),
-                                                                                    firstPlayedTrack = firstTrack,
-                                                                                    playlistId = "RDAMVM${result.videoId}",
-                                                                                    playlistName =
-                                                                                        "\"${searchText}\" ${
-                                                                                            getStringBlocking(
-                                                                                                Res.string.in_search,
-                                                                                            )
-                                                                                        }",
-                                                                                    playlistType = PlaylistType.RADIO,
-                                                                                    continuation = null,
-                                                                                ),
-                                                                            )
-                                                                            searchViewModel.loadMediaItem(firstTrack, Config.SONG_CLICK)
-                                                                        },
-                                                                        onAddToQueue = {
-                                                                            sharedViewModel.addListToQueue(
-                                                                                arrayListOf(result.toTrack()),
-                                                                            )
-                                                                        },
+                                                        if (searchScreenState.searchType == SearchType.ALL) {
+                                                            searchSections.forEach { section ->
+                                                                item(key = "section_" + section.type.name) {
+                                                                    HomeSectionHeader(
+                                                                        title = stringResource(section.type.toStringRes()),
+                                                                        actionLabel = stringResource(Res.string.see_all),
+                                                                        onAction = { searchViewModel.setSearchType(section.type) },
+                                                                        modifier = Modifier.padding(top = 18.dp, bottom = 4.dp),
                                                                     )
                                                                 }
-
-                                                                is VideosResult -> {
-                                                                    SongFullWidthItems(
-                                                                        track = result.toTrack(),
-                                                                        isPlaying = result.videoId == currentVideoId,
-                                                                        showDuration = true,
-                                                                        modifier = Modifier,
-                                                                        onMoreClickListener = {
-                                                                            onMoreClick(result.toTrack().toSongEntity())
-                                                                        },
-                                                                        onClickListener = {
-                                                                            val firstTrack = result.toTrack()
-                                                                            searchViewModel.setQueueData(
-                                                                                QueueData.Data(
-                                                                                    listTracks = arrayListOf(firstTrack),
-                                                                                    firstPlayedTrack = firstTrack,
-                                                                                    playlistId = "RDAMVM${result.videoId}",
-                                                                                    playlistName =
-                                                                                        "\"${searchText}\" ${
-                                                                                            getStringBlocking(
-                                                                                                Res.string.in_search,
-                                                                                            )
-                                                                                        }",
-                                                                                    playlistType = PlaylistType.RADIO,
-                                                                                    continuation = null,
-                                                                                ),
-                                                                            )
-                                                                            searchViewModel.loadMediaItem(firstTrack, Config.VIDEO_CLICK)
-                                                                        },
-                                                                        onAddToQueue = {
-                                                                            sharedViewModel.addListToQueue(
-                                                                                arrayListOf(result.toTrack()),
-                                                                            )
-                                                                        },
-                                                                    )
-                                                                }
-
-                                                                is AlbumsResult -> {
-                                                                    PlaylistFullWidthItems(
-                                                                        data = result,
-                                                                        onClickListener = {
-                                                                            navController.navigate(
-                                                                                AlbumDestination(
-                                                                                    result.browseId,
-                                                                                ),
-                                                                            )
-                                                                        },
-                                                                    )
-                                                                }
-
-                                                                is ArtistsResult -> {
-                                                                    ArtistFullWidthItems(
-                                                                        data = result,
-                                                                        onClickListener = {
-                                                                            navController.navigate(
-                                                                                ArtistDestination(
-                                                                                    result.browseId,
-                                                                                ),
-                                                                            )
-                                                                        },
-                                                                    )
-                                                                }
-
-                                                                is PlaylistsResult -> {
-                                                                    PlaylistFullWidthItems(
-                                                                        data = result,
-                                                                        onClickListener = {
-                                                                            if (result.resultType == "Podcast") {
-                                                                                navController.navigate(
-                                                                                    PodcastDestination(
-                                                                                        result.browseId,
-                                                                                    ),
-                                                                                )
-                                                                            } else {
-                                                                                navController.navigate(
-                                                                                    PlaylistDestination(
-                                                                                        result.browseId,
-                                                                                    ),
-                                                                                )
-                                                                            }
-                                                                        },
-                                                                    )
-                                                                }
+                                                                items(section.items) { result -> resultRow(result) }
                                                             }
+                                                        } else {
+                                                            items(currentResults) { result -> resultRow(result) }
                                                         }
                                                         // Space at bottom to account for bottom navigation and mini player
                                                         item { Spacer(modifier = Modifier.height(150.dp)) }

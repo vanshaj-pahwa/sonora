@@ -1419,6 +1419,8 @@ fun NowPlayingBottomSheet(
     onNavigateToOtherScreen: () -> Unit = {},
     onDelete: (() -> Unit)? = null,
     onLibraryDelete: (() -> Unit)? = null,
+    // Opens straight on the playlist picker and closes with it, for a dedicated Save button.
+    startInAddToPlaylist: Boolean = false,
     dataStoreManager: DataStoreManager = koinInject<DataStoreManager>(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -1435,7 +1437,7 @@ fun NowPlayingBottomSheet(
             }
         }
 
-    var addToAPlaylist by remember { mutableStateOf(false) }
+    var addToAPlaylist by remember { mutableStateOf(startInAddToPlaylist) }
     var artist by remember { mutableStateOf(false) }
     var mainLyricsProvider by remember { mutableStateOf(false) }
     var sleepTimer by remember { mutableStateOf(false) }
@@ -1476,7 +1478,10 @@ fun NowPlayingBottomSheet(
             isBottomSheetVisible = true,
             listLocalPlaylist = uiState.listLocalPlaylist,
             listYouTubePlaylist = uiState.listYouTubePlaylist,
-            onDismiss = { addToAPlaylist = false },
+            onDismiss = {
+                addToAPlaylist = false
+                if (startInAddToPlaylist) onDismiss()
+            },
             onClick = {
                 viewModel.onUIEvent(NowPlayingBottomSheetUIEvent.AddToPlaylist(it.id))
             },
@@ -1641,7 +1646,7 @@ fun NowPlayingBottomSheet(
         )
     }
 
-    if (isBottomSheetVisible) {
+    if (isBottomSheetVisible && !startInAddToPlaylist) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             sheetState = modelBottomSheetState,
