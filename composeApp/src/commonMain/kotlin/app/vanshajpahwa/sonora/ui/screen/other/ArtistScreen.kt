@@ -1,5 +1,8 @@
 package app.vanshajpahwa.sonora.ui.screen.other
 
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.animation.AnimatedVisibility
 import app.vanshajpahwa.sonora.ui.theme.SonoraShapes
 import androidx.compose.animation.Crossfade
@@ -799,39 +802,40 @@ private fun ArtistSections(
                         Text(stringResource(Res.string.see_all), style = typo().bodySmall)
                     }
                 }
-                state.data.popularSongs.forEach { song ->
-                    SongFullWidthItems(
-                        forceDark = true,
-                        track = song,
-                        isPlaying = song.videoId == playingTrack,
-                        showDuration = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        onMoreClickListener = {
-                            onTrackMore(song)
-                        },
-                        onClickListener = {
-                            val firstQueue: Track = song
-                            viewModel.setQueueData(
-                                QueueData.Data(
-                                    listTracks = arrayListOf(firstQueue),
-                                    firstPlayedTrack = firstQueue,
-                                    playlistId = "RDAMVM${song.videoId}",
-                                    playlistName = "\"${state.data.title ?: ""}\" ${getStringBlocking(Res.string.popular)}",
-                                    playlistType = PlaylistType.RADIO,
-                                    continuation = null,
-                                ),
-                            )
-                            viewModel.loadMediaItem(
-                                firstQueue,
-                                type = Config.SONG_CLICK,
-                            )
-                        },
-                        onAddToQueue = {
-                            sharedViewModel.addListToQueue(
-                                arrayListOf(song),
-                            )
-                        },
-                    )
+                // Columns of four that scroll sideways and snap, each a little narrower than the
+                // screen so the next one shows at the edge and says there is more. A single column
+                // takes the full width, since there is nothing to scroll to.
+                val topSongs by viewModel.topSongs.collectAsStateWithLifecycle()
+                val columns = remember(topSongs) { topSongs.chunked(4) }
+                val popularRowState = rememberLazyListState()
+                LazyRow(
+                    state = popularRowState,
+                    // Start, not the default centre: centred, a 90% column leaves a sliver of the
+                    // previous one at the left edge and the rows sit out of line with the header.
+                    flingBehavior = rememberSnapFlingBehavior(popularRowState, SnapPosition.Start),
+                ) {
+                    itemsIndexed(columns) { columnIndex, column ->
+                        Column(modifier = Modifier.fillParentMaxWidth(if (columns.size > 1) 0.9f else 1f)) {
+                            column.forEachIndexed { rowIndex, song ->
+                                SongFullWidthItems(
+                                    forceDark = true,
+                                    track = song,
+                                    isPlaying = song.videoId == playingTrack,
+                                    showDuration = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onMoreClickListener = {
+                                        onTrackMore(song)
+                                    },
+                                    // No swipe to queue here: it is a horizontal drag on the row, and it
+                                    // took the gesture before the grid could scroll. The row's menu
+                                    // still offers it.
+                                    onClickListener = {
+                                        viewModel.playTopSong(columnIndex * 4 + rowIndex)
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
